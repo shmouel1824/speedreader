@@ -1,0 +1,309 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1>Start Reading</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Choose a ready subject — or request your own personalised text.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- LANGUAGE SELECTOR -->
+<div class="card p-3 mb-4" style="background:#fdf8f0; border:1px solid var(--border);">
+    <div class="d-flex align-items-center gap-3 flex-wrap justify-content-center">
+        <span style="font-family:'Playfair Display',serif;
+                     color:var(--accent); font-weight:600;">
+            🌐 Reading Language:
+        </span>
+        <div class="d-flex gap-2 flex-wrap" id="lang-buttons">
+            {% for code, label in language_choices %}
+            <button type="button"
+                    onclick="selectLanguage('{{ code }}')"
+                    id="lang-btn-{{ code }}"
+                    class="btn btn-sm btn-outline-secondary"
+                    style="border-radius:20px; font-size:0.9rem;
+                           padding:0.3rem 1rem; transition:all 0.2s;">
+                {{ label }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT: EXISTING SUBJECTS -->
+    <div class="col-lg-7">
+        <div class="card p-4 h-100">
+            <h5 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:1.2rem;">
+                📚 Choose a Subject
+            </h5>
+            {% if subjects %}
+            <div class="row g-2">
+                {% for subject in subjects %}
+                <div class="col-md-6">
+                    <div class="card p-3 h-100 text-center"
+                         style="cursor:pointer; transition:all 0.2s;
+                                border:1px solid var(--border);"
+                         onmouseover="this.style.borderColor='var(--accent)'"
+                         onmouseout="this.style.borderColor='var(--border)'">
+                        <h6 style="color:var(--accent);
+                                   font-family:'Playfair Display',serif;
+                                   margin-bottom:0.3rem;">
+                            {{ subject.name }}
+                        </h6>
+                        <p style="color:var(--ink-light);
+                                  font-size:0.8rem; margin-bottom:0.8rem;">
+                            {{ subject.texts.count }}
+                            text{{ subject.texts.count|pluralize }} available
+                        </p>
+                        <a id="subject-link-{{ subject.id }}"
+                           href="{% url 'text_list' subject.id %}?language=English"
+                           class="btn btn-primary btn-sm mt-auto">
+                            Browse Texts →
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:var(--ink-light); font-style:italic;
+                      text-align:center; margin-top:2rem;">
+                No subjects yet — use the generator to create the first one!
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT: CUSTOM TEXT GENERATOR -->
+    <div class="col-lg-5">
+        <div class="card p-4 h-100"
+             style="border:2px solid var(--accent-gold); background:#fdf8f0;">
+
+            <h5 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.3rem;">
+                ✨ Request Your Own Text
+            </h5>
+            <p style="color:var(--ink-light); font-size:0.85rem;
+                      font-style:italic; margin-bottom:1.2rem;">
+                Tell us what you want to read — our AI will write it for you
+                in your chosen language.
+            </p>
+
+            <form method="POST" action="{% url 'custom_text' %}" id="custom-form">
+                {% csrf_token %}
+
+                <!-- hidden language field — updated by JS -->
+                <input type="hidden" name="language"
+                       id="selected-language" value="English">
+
+                <!-- TOPIC -->
+                <div class="mb-3">
+                    <label style="font-size:0.85rem; color:var(--ink-light);
+                                  text-transform:uppercase; letter-spacing:0.5px;">
+                        Topic
+                    </label>
+                    <input type="text"
+                           name="topic"
+                           id="topic-input"
+                           placeholder="e.g. The history of aviation..."
+                           required
+                           style="width:100%; margin-top:0.4rem;
+                                  background:#fff; border:1px solid var(--border);
+                                  border-radius:3px; padding:0.5rem 0.8rem;
+                                  font-family:'Source Sans 3',sans-serif;
+                                  font-size:0.95rem; color:var(--ink);"
+                           onfocus="this.style.borderColor='var(--accent)'"
+                           onblur="this.style.borderColor='var(--border)'">
+                </div>
+
+                <!-- WORD COUNT -->
+                <div class="mb-3">
+                    <label style="font-size:0.85rem; color:var(--ink-light);
+                                  text-transform:uppercase; letter-spacing:0.5px;">
+                        Number of words:
+                        <strong id="word-count-display"
+                                style="color:var(--accent); margin-left:4px;">
+                            300
+                        </strong>
+                    </label>
+                    <input type="range" name="word_count"
+                           id="word-count-slider"
+                           min="100" max="1000" value="300" step="50"
+                           style="width:100%; margin-top:0.5rem;
+                                  accent-color:var(--accent);"
+                           oninput="document.getElementById('word-count-display').textContent=this.value">
+                    <div class="d-flex justify-content-between"
+                         style="font-size:0.78rem; color:var(--ink-light); margin-top:2px;">
+                        <span>100</span><span>1000</span>
+                    </div>
+                </div>
+
+                <!-- DIFFICULTY -->
+                <div class="mb-4">
+                    <label style="font-size:0.85rem; color:var(--ink-light);
+                                  text-transform:uppercase; letter-spacing:0.5px;">
+                        Vocabulary Level
+                    </label>
+                    <div class="d-flex flex-column gap-2 mt-2">
+                        {% for value, label in difficulty_choices %}
+                        <label style="display:flex; align-items:center; gap:0.6rem;
+                                      cursor:pointer; padding:0.4rem 0.6rem;
+                                      border-radius:3px; transition:background 0.15s;"
+                               onmouseover="this.style.background='var(--parchment-dark)'"
+                               onmouseout="this.style.background='transparent'">
+                            <input type="radio" name="level" value="{{ value }}"
+                                   {% if value == 2 %}checked{% endif %}
+                                   style="accent-color:var(--accent);">
+                            <span>
+                                <strong style="color:var(--accent); font-size:0.9rem;">
+                                    {{ label }}
+                                </strong>
+                                <span style="color:var(--ink-light);
+                                             font-size:0.82rem; margin-left:4px;">
+                                    {% if value == 1 %}
+                                        — everyday vocabulary
+                                    {% elif value == 2 %}
+                                        — clear and accessible
+                                    {% elif value == 3 %}
+                                        — varied vocabulary
+                                    {% elif value == 4 %}
+                                        — rich, academic style
+                                    {% elif value == 5 %}
+                                        — dense and specialised
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- SELECTED LANGUAGE DISPLAY -->
+                <div class="mb-3 p-2"
+                     style="background:var(--parchment-dark);
+                            border-radius:4px; border:1px solid var(--border);
+                            text-align:center;">
+                    <span style="font-size:0.85rem; color:var(--ink-light);">
+                        Text will be generated in:
+                    </span>
+                    <strong id="form-language-display"
+                            style="color:var(--accent); margin-left:4px;">
+                        🇬🇧 English
+                    </strong>
+                </div>
+
+                <!-- SUBMIT -->
+                <button type="submit"
+                        class="btn btn-primary w-100"
+                        id="generate-btn"
+                        onclick="return handleGenerate()">
+                    ✨ Generate & Read
+                </button>
+
+            </form>
+
+            <!-- LOADING SPINNER -->
+            <div id="loading-box"
+                 style="display:none; text-align:center; margin-top:1.2rem;">
+                <div style="display:inline-block; width:36px; height:36px;
+                             border:4px solid var(--border);
+                             border-top:4px solid var(--accent);
+                             border-radius:50%;
+                             animation:spin 0.8s linear infinite;">
+                </div>
+                <p style="color:var(--ink-light); font-style:italic;
+                           font-size:0.95rem; margin-top:0.8rem;">
+                    ✨ Generating your text in
+                    <strong id="loading-language"
+                            style="color:var(--accent);">English</strong>...
+                    <br>
+                    <span style="font-size:0.82rem;">
+                        This may take a few seconds.
+                    </span>
+                </p>
+                <style>
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                </style>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- BACK -->
+<div class="text-center mt-4 mb-5">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<!-- LANGUAGE LABELS FOR JS -->
+<script>
+const LANGUAGE_LABELS = {
+    {% for code, label in language_choices %}
+    '{{ code }}': '{{ label }}',
+    {% endfor %}
+};
+
+const SUBJECT_IDS = [
+    {% for s in subjects %}{{ s.id }},{% endfor %}
+];
+
+let currentLanguage = 'English';
+
+// ── language selector ─────────────────────────────────
+function selectLanguage(code) {
+    currentLanguage = code;
+
+    // update hidden form input
+    document.getElementById('selected-language').value = code;
+
+    // update language display in form
+    document.getElementById('form-language-display').textContent =
+        LANGUAGE_LABELS[code] || code;
+
+    // update loading language label
+    document.getElementById('loading-language').textContent = code;
+
+    // update all button styles
+    {% for code, label in language_choices %}
+    document.getElementById('lang-btn-{{ code }}').style.background  = '';
+    document.getElementById('lang-btn-{{ code }}').style.borderColor = '';
+    document.getElementById('lang-btn-{{ code }}').style.color       = '';
+    {% endfor %}
+
+    const active = document.getElementById('lang-btn-' + code);
+    if (active) {
+        active.style.background  = 'var(--accent)';
+        active.style.borderColor = 'var(--accent)';
+        active.style.color       = '#fff';
+    }
+
+    // update all subject card links
+    SUBJECT_IDS.forEach(id => {
+        const link = document.getElementById('subject-link-' + id);
+        if (link) link.href = `/subject/${id}/texts/?language=${code}`;
+    });
+}
+
+// ── loading spinner ───────────────────────────────────
+function handleGenerate() {
+    const topic = document.getElementById('topic-input').value.trim();
+    if (!topic) return false; // let browser handle required validation
+
+    document.getElementById('generate-btn').style.display = 'none';
+    document.getElementById('loading-box').style.display  = 'block';
+    return true; // allow form to submit
+}
+
+// ── init: default English selected ───────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    selectLanguage('English');
+});
+</script>
+
+{% endblock %}

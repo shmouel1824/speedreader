@@ -1,0 +1,255 @@
+{% extends 'reader/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card p-4">
+
+            <h2 class="text-center mb-1"
+                style="font-family:'Playfair Display',serif; color:var(--accent);">
+                Create Account
+            </h2>
+            <p class="text-center mb-4"
+               style="color:var(--ink-light); font-style:italic; font-size:0.9rem;">
+                Join SpeedReader and start your reading journey.
+            </p>
+
+            <form method="POST" id="register-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+
+                <!-- PASSWORD GENERATOR -->
+                <div class="card p-3 mt-2 mb-3"
+                     style="background:#fdf8f0; border:1px dashed var(--accent-gold);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-family:'Source Sans 3',sans-serif;
+                                     font-size:0.9rem; color:var(--ink-light);">
+                            🔐 Need a strong password?
+                        </span>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                onclick="generatePassword()"
+                                style="font-size:0.8rem;">
+                            ✨ Generate
+                        </button>
+                    </div>
+
+                    <!-- generated password display -->
+                    <div id="generated-box" style="display:none;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <code id="generated-password"
+                                  style="flex:1;
+                                         background:#fff;
+                                         border:1px solid var(--border);
+                                         border-radius:3px;
+                                         padding:0.4rem 0.7rem;
+                                         font-size:1rem;
+                                         color:var(--accent);
+                                         letter-spacing:1px;">
+                            </code>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    onclick="generatePassword()"
+                                    title="Regenerate">
+                                🔄
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    onclick="usePassword()"
+                                    title="Use this password">
+                                ✅ Use
+                            </button>
+                        </div>
+
+                        <!-- strength bar -->
+                        <div style="height:5px; border-radius:3px;
+                                    background:var(--parchment-dark); overflow:hidden;">
+                            <div id="strength-bar"
+                                 style="height:100%; width:0%;
+                                        background:var(--accent);
+                                        transition:width 0.4s ease;">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span id="strength-label"
+                                  style="font-size:0.78rem; color:var(--ink-light);">
+                            </span>
+                            <span style="font-size:0.78rem; color:var(--ink-light);">
+                                💡 Click <strong>Use</strong> to fill the password fields
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- options -->
+                    <div id="options-box"
+                         style="display:none; margin-top:0.75rem;
+                                padding-top:0.75rem; border-top:1px solid var(--border);">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <label style="font-size:0.82rem; color:var(--ink-light);">
+                                    Length:
+                                </label>
+                            </div>
+                            <div class="col-auto">
+                                <input type="range" id="length-slider"
+                                       min="8" max="24" value="14" step="1"
+                                       style="accent-color:var(--accent); width:100px;"
+                                       oninput="updateLengthDisplay(); generatePassword();">
+                            </div>
+                            <div class="col-auto">
+                                <span id="length-display"
+                                      style="font-weight:700; color:var(--accent);
+                                             font-size:0.9rem;">
+                                    14
+                                </span>
+                            </div>
+                            <div class="col-auto ms-2">
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="opt-symbols" checked
+                                           onchange="generatePassword()">
+                                    <label class="form-check-label"
+                                           for="opt-symbols"
+                                           style="font-size:0.82rem; color:var(--ink-light);">
+                                        Symbols
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="opt-numbers" checked
+                                           onchange="generatePassword()">
+                                    <label class="form-check-label"
+                                           for="opt-numbers"
+                                           style="font-size:0.82rem; color:var(--ink-light);">
+                                        Numbers
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- END PASSWORD GENERATOR -->
+
+                <button type="submit" class="btn btn-primary w-100 mt-2">
+                    Create Account →
+                </button>
+            </form>
+
+            <p class="text-center mt-3"
+               style="color:var(--ink-light); font-size:0.9rem;">
+                Already have an account?
+                <a href="{% url 'login' %}" style="color:var(--accent);">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+const UPPER   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const LOWER   = 'abcdefghijklmnopqrstuvwxyz';
+const NUMBERS = '0123456789';
+const SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.?';
+
+function generatePassword() {
+    const length     = parseInt(document.getElementById('length-slider').value);
+    const useSymbols = document.getElementById('opt-symbols').checked;
+    const useNumbers = document.getElementById('opt-numbers').checked;
+
+    // build character pool
+    let pool = UPPER + LOWER;
+    let mandatory = [
+        UPPER[Math.floor(Math.random() * UPPER.length)],
+        LOWER[Math.floor(Math.random() * LOWER.length)],
+    ];
+
+    if (useNumbers) {
+        pool += NUMBERS;
+        mandatory.push(NUMBERS[Math.floor(Math.random() * NUMBERS.length)]);
+    }
+    if (useSymbols) {
+        pool += SYMBOLS;
+        mandatory.push(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
+    }
+
+    // fill remaining characters randomly
+    let password = [...mandatory];
+    for (let i = password.length; i < length; i++) {
+        password.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+
+    // shuffle
+    password = password.sort(() => Math.random() - 0.5).join('');
+
+    // display
+    document.getElementById('generated-password').textContent = password;
+    document.getElementById('generated-box').style.display    = 'block';
+    document.getElementById('options-box').style.display      = 'block';
+
+    updateStrength(password);
+}
+
+function updateStrength(password) {
+    let score = 0;
+    if (password.length >= 12)                    score += 25;
+    if (password.length >= 16)                    score += 15;
+    if (/[A-Z]/.test(password))                   score += 15;
+    if (/[a-z]/.test(password))                   score += 15;
+    if (/[0-9]/.test(password))                   score += 15;
+    if (/[^A-Za-z0-9]/.test(password))            score += 15;
+
+    const bar   = document.getElementById('strength-bar');
+    const label = document.getElementById('strength-label');
+
+    bar.style.width = score + '%';
+
+    if (score >= 85) {
+        bar.style.background   = '#4a8a3a';
+        label.textContent      = '🟢 Very Strong';
+        label.style.color      = '#4a8a3a';
+    } else if (score >= 65) {
+        bar.style.background   = '#c4a020';
+        label.textContent      = '🟡 Strong';
+        label.style.color      = '#c4a020';
+    } else if (score >= 45) {
+        bar.style.background   = 'var(--accent-light)';
+        label.textContent      = '🟠 Moderate';
+        label.style.color      = 'var(--accent-light)';
+    } else {
+        bar.style.background   = '#a04040';
+        label.textContent      = '🔴 Weak';
+        label.style.color      = '#a04040';
+    }
+}
+
+function usePassword() {
+    const pwd = document.getElementById('generated-password').textContent.trim();
+
+    // find Django's password fields (crispy forms generates id_password1 / id_password2)
+    const p1 = document.getElementById('id_password1');
+    const p2 = document.getElementById('id_password2');
+
+    if (p1) p1.value = pwd;
+    if (p2) p2.value = pwd;
+
+    // visual feedback
+    const btn = event.target;
+    btn.textContent = '✅ Filled!';
+    btn.style.background = '#4a8a3a';
+    btn.style.borderColor = '#4a8a3a';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+        btn.textContent = '✅ Use';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+    }, 2000);
+}
+
+function updateLengthDisplay() {
+    const val = document.getElementById('length-slider').value;
+    document.getElementById('length-display').textContent = val;
+}
+</script>
+
+{% endblock %}

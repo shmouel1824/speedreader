@@ -1,0 +1,1146 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+{% with rtl=lang_cfg.rtl font=lang_cfg.font %}
+
+<style>
+    .lang-content {
+        direction: {
+                {
+                rtl|yesno: "rtl,ltr"
+            }
+        }
+
+        ;
+
+        text-align: {
+                {
+                rtl|yesno: "right,left"
+            }
+        }
+
+        ;
+
+            {
+            % if font %
+        }
+
+        font-family:'{{ font }}',
+        serif !important;
+
+            {
+            % endif %
+        }
+    }
+
+    /* ── RSVP ── */
+    #rsvp-display {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: var(--ink);
+        font-family: 'Playfair Display', serif;
+        text-align: center;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 2px;
+    }
+
+    /* ── SPOTLIGHT ── */
+    .spotlight-line {
+        transition: opacity 0.2s, filter 0.2s;
+        opacity: 0.2;
+        filter: blur(1.5px);
+        line-height: 2.2;
+        padding: 2px 0;
+    }
+
+    .spotlight-line.active {
+        opacity: 1;
+        filter: none;
+    }
+
+    /* ── SCROLL ── */
+    #scroll-viewport {
+        height: 260px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    #scroll-content {
+        position: absolute;
+        width: 100%;
+    }
+
+    .scroll-line-indicator {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 38px;
+        height: 2px;
+        background: var(--accent);
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* ── READING TYPOGRAPHY ── */
+    .reading-text-content {
+        font-size: var(--read-size, 1.2rem);
+        font-family: var(--read-font, 'Lora', Georgia, serif);
+        line-height: var(--read-spacing, 2.0);
+        color: var(--ink);
+        max-width: 750px;
+        margin: 0 auto;
+        transition: font-size 0.3s, line-height 0.3s, font-family 0.3s;
+    }
+
+    /* ── FLOATING PANEL ── */
+    #floating-prefs {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        z-index: 1000;
+        width: 280px;
+        display: none;
+    }
+
+    #floating-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1001;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        font-size: 1.4rem;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(139, 69, 19, 0.4);
+        transition: transform 0.2s;
+    }
+
+    #floating-toggle:hover {
+        transform: scale(1.1);
+    }
+</style>
+
+<!-- TIP BANNER -->
+<div class="card p-3 mb-4" style="border-left:4px solid var(--accent-gold); background:#fdf8f0;">
+    <div class="d-flex align-items-start gap-3">
+        <span style="font-size:2rem;">{{ tip.icon }}</span>
+        <div>
+            <strong style="font-family:'Playfair Display',serif; color:var(--accent);">
+                Technique: {{ tip.title }}
+            </strong>
+            <p class="mb-0" style="color:var(--ink-light); font-size:0.95rem;">
+                {{ tip.tip }}
+            </p>
+        </div>
+    </div>
+</div>
+{% if is_retry %}
+<div class="card p-3 mb-4" style="border-left:4px solid #4a8a3a; background:#f0f5e8;">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span style="font-size:1.8rem;">🔁</span>
+        <div>
+            <strong style="font-family:'Playfair Display',serif;
+                           color:#4a8a3a; font-size:1rem;">
+                Retry — Attempt #{{ attempts|add:1 }}
+            </strong>
+            <div class="d-flex gap-4 mt-1 flex-wrap">
+                <span style="font-size:0.88rem; color:var(--ink-light);">
+                    🏆 Best score:
+                    <strong style="color:#4a8a3a;">
+                        {{ best_score|floatformat:1 }}%
+                    </strong>
+                </span>
+                <span style="font-size:0.88rem; color:var(--ink-light);">
+                    ⚡ Best WPM:
+                    <strong style="color:#4a8a3a;">
+                        {{ best_wpm|floatformat:0 }}
+                    </strong>
+                </span>
+                <span style="font-size:0.88rem; color:var(--ink-light);
+                             font-style:italic;">
+                    Can you beat your own record?
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <span style="font-family:'Playfair Display',serif;
+                     font-size:1.3rem; color:var(--accent);">
+            {{ text.title }}
+        </span>
+        <span style="color:var(--ink-light); font-size:0.85rem; margin-left:1rem;">
+            {{ text.word_count }} words · Level {{ text.difficulty }} · {{ text.language }}
+        </span>
+    </div>
+    <div class="text-end">
+        <span style="font-size:0.85rem; color:var(--ink-light);">Time elapsed</span><br>
+        <span id="timer-display" style="font-family:'Playfair Display',serif;
+                     font-size:2rem; color:var(--accent); font-weight:700;">
+            0:00
+        </span>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SETUP PANEL
+═══════════════════════════════════════════════ -->
+<div id="start-section">
+    <div class="card p-4 mb-4" style="background:#fdf8f0;">
+        <h5 style="font-family:'Playfair Display',serif;
+               color:var(--accent); margin-bottom:1.5rem;">
+            ⚙️ Configure your reading session
+        </h5>
+
+        <div class="row g-4">
+
+            <!-- READING MODE -->
+            <div class="col-12">
+                <label style="font-size:0.85rem; color:var(--ink-light);
+                          text-transform:uppercase; letter-spacing:0.5px;">
+                    Reading Mode
+                    <span style="color:var(--accent-gold); margin-left:4px;">
+                        (affects score)
+                    </span>
+                </label>
+                <div class="row g-2 mt-1">
+
+                    <!-- HIGHLIGHT -->
+                    <div class="col-6 col-md-3">
+                        <div id="mode-card-highlight" onclick="selectMode('highlight')"
+                            class="card p-3 text-center mode-card" style="cursor:pointer; transition:all 0.2s;
+                                border:2px solid var(--accent);">
+                            <div style="font-size:2rem; margin-bottom:0.4rem;">🟡</div>
+                            <div style="font-family:'Playfair Display',serif;
+                                    font-weight:700; color:var(--accent);
+                                    font-size:0.95rem;">
+                                Highlight
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--ink-light); margin-top:3px;">
+                                word cursor
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--accent);
+                                    font-weight:700; margin-top:5px;">
+                                1.0× bonus
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCROLL -->
+                    <div class="col-6 col-md-3">
+                        <div id="mode-card-scroll" onclick="selectMode('scroll')" class="card p-3 text-center mode-card"
+                            style="cursor:pointer; transition:all 0.2s;
+                                border:2px solid var(--border);">
+                            <div style="font-size:2rem; margin-bottom:0.4rem;">📜</div>
+                            <div style="font-family:'Playfair Display',serif;
+                                    font-weight:700; color:var(--ink);
+                                    font-size:0.95rem;">
+                                Scroll
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--ink-light); margin-top:3px;">
+                                auto-scroll text
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--ink-light);
+                                    font-weight:700; margin-top:5px;">
+                                1.3× bonus
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SPOTLIGHT -->
+                    <div class="col-6 col-md-3">
+                        <div id="mode-card-spotlight" onclick="selectMode('spotlight')"
+                            class="card p-3 text-center mode-card" style="cursor:pointer; transition:all 0.2s;
+                                border:2px solid var(--border);">
+                            <div style="font-size:2rem; margin-bottom:0.4rem;">🔦</div>
+                            <div style="font-family:'Playfair Display',serif;
+                                    font-weight:700; color:var(--ink);
+                                    font-size:0.95rem;">
+                                Spotlight
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--ink-light); margin-top:3px;">
+                                line by line
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--ink-light);
+                                    font-weight:700; margin-top:5px;">
+                                1.5× bonus
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RSVP -->
+                    <div class="col-6 col-md-3">
+                        <div id="mode-card-rsvp" onclick="selectMode('rsvp')" class="card p-3 text-center mode-card"
+                            style="cursor:pointer; transition:all 0.2s;
+                                border:2px solid var(--border);">
+                            <div style="font-size:2rem; margin-bottom:0.4rem;">⚡</div>
+                            <div style="font-family:'Playfair Display',serif;
+                                    font-weight:700; color:var(--ink);
+                                    font-size:0.95rem;">
+                                RSVP
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--ink-light); margin-top:3px;">
+                                flash words
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--ink-light);
+                                    font-weight:700; margin-top:5px;">
+                                2.0× bonus
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- MODE DESCRIPTION -->
+                <div class="mt-3 p-3" style="background:var(--parchment-dark); border-radius:4px;
+                        border:1px solid var(--border);">
+                    <p id="mode-description" style="margin:0; font-size:0.9rem;
+                                                color:var(--ink-light); font-style:italic;">
+                    </p>
+                </div>
+            </div>
+
+            <!-- SPEED -->
+            <div class="col-md-6">
+                <label style="font-size:0.85rem; color:var(--ink-light);
+                          text-transform:uppercase; letter-spacing:0.5px;">
+                    Reading Speed
+                </label>
+                <div class="d-flex align-items-center gap-3 mt-2">
+                    <input type="range" id="start-speed-slider" min="60" max="600" value="150" step="10"
+                        style="flex:1; accent-color:var(--accent);"
+                        oninput="document.getElementById('start-speed-display').textContent=this.value+' WPM'">
+                    <span id="start-speed-display" style="font-family:'Playfair Display',serif;
+                             color:var(--accent); font-weight:700; min-width:80px;">
+                        150 WPM
+                    </span>
+                </div>
+            </div>
+
+            <!-- CHUNK SIZE (hidden for RSVP/scroll/spotlight) -->
+            <div class="col-md-6" id="chunk-section">
+                <label style="font-size:0.85rem; color:var(--ink-light);
+                          text-transform:uppercase; letter-spacing:0.5px;">
+                    Words per chunk
+                    <span style="color:var(--accent-gold); margin-left:4px;">
+                        (affects score)
+                    </span>
+                </label>
+                <div class="d-flex gap-2 mt-2">
+                    {% for n in "12345" %}
+                    <button type="button" onclick="selectChunk({{ n }})" id="chunk-btn-{{ n }}"
+                        class="btn btn-outline-secondary" style="width:46px; height:46px;
+                               font-family:'Playfair Display',serif;
+                               font-size:1.1rem; font-weight:700;
+                               padding:0; border-radius:4px;">
+                        {{ n }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+        <!-- READING TYPOGRAPHY PREFERENCES -->
+        <div class="col-12 mt-2">
+            <div style="background:var(--parchment-dark); border-radius:4px;
+                border:1px solid var(--border); padding:1rem;">
+                <h6 style="font-family:'Playfair Display',serif;
+                   color:var(--accent); margin-bottom:1rem;">
+                    🖋️ Reading Typography
+                </h6>
+
+                <div class="row g-3">
+
+                    <!-- FONT SIZE -->
+                    <div class="col-md-4">
+                        <label style="font-size:0.82rem; color:var(--ink-light);
+                              text-transform:uppercase; letter-spacing:0.5px;">
+                            Font Size
+                        </label>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <span style="font-size:0.75rem; color:var(--ink-light);">A</span>
+                            <input type="range" id="setup-size-slider" min="0" max="4" value="2" step="1"
+                                style="flex:1; accent-color:var(--accent);" oninput="updateSetupSize(this.value)">
+                            <span style="font-size:1.1rem; color:var(--ink-light);">A</span>
+                        </div>
+                        <div style="text-align:center; font-size:0.8rem;
+                            color:var(--accent); margin-top:3px;" id="setup-size-label">
+                            Normal
+                        </div>
+                    </div>
+
+                    <!-- FONT FAMILY -->
+                    <div class="col-md-4">
+                        <label style="font-size:0.82rem; color:var(--ink-light);
+                              text-transform:uppercase; letter-spacing:0.5px;">
+                            Font Style
+                        </label>
+                        <select id="setup-font-select" onchange="updateSetupFont(this.value)" style="width:100%; margin-top:0.5rem;
+                               background:#fff; border:1px solid var(--border);
+                               border-radius:3px; padding:0.35rem 0.5rem;
+                               font-size:0.9rem; color:var(--ink); cursor:pointer;">
+                            <option value="Lora">Lora (Classic)</option>
+                            <option value="Georgia">Georgia (Traditional)</option>
+                            <option value="Merriweather">Merriweather (Strong)</option>
+                            <option value="Open Sans">Open Sans (Modern)</option>
+                            <option value="Lexie Readable">Lexie (Accessible)</option>
+                            <option value="Courier Prime">Courier (Focus)</option>
+                        </select>
+                    </div>
+
+                    <!-- LINE SPACING -->
+                    <div class="col-md-4">
+                        <label style="font-size:0.82rem; color:var(--ink-light);
+                              text-transform:uppercase; letter-spacing:0.5px;">
+                            Line Spacing
+                        </label>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" onclick="selectSpacing('1.6')" id="sp-compact"
+                                class="btn btn-sm btn-outline-secondary flex-fill"
+                                style="font-size:0.78rem; padding:0.3rem;">
+                                Compact
+                            </button>
+                            <button type="button" onclick="selectSpacing('2.0')" id="sp-normal"
+                                class="btn btn-sm btn-primary flex-fill" style="font-size:0.78rem; padding:0.3rem;">
+                                Normal
+                            </button>
+                            <button type="button" onclick="selectSpacing('2.6')" id="sp-relaxed"
+                                class="btn btn-sm btn-outline-secondary flex-fill"
+                                style="font-size:0.78rem; padding:0.3rem;">
+                                Relaxed
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- PREVIEW -->
+                <div class="mt-3 p-3" style="background:#fff; border-radius:4px;
+                    border:1px solid var(--border);">
+                    <div id="font-preview" style="font-size:1.2rem; font-family:'Lora',serif;
+                        line-height:2.0; color:var(--ink);">
+                        The quick brown fox jumps over the lazy dog.
+                        Speed reading is a skill that can be learned.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- START BUTTON -->
+        <div class="text-center mt-4">
+            <button class="btn btn-primary btn-lg px-5" onclick="startReading()">
+                📖 Start Reading
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     LIVE CONTROLS BAR
+═══════════════════════════════════════════════ -->
+<div class="card p-3 mb-4" id="controls-bar" style="display:none;">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <label style="font-size:0.85rem; color:var(--ink-light); white-space:nowrap;">
+                Speed:
+            </label>
+            <input type="range" id="speed-slider" min="60" max="600" value="150" step="10"
+                style="flex:1; accent-color:var(--accent);" oninput="changeSpeed(this.value)">
+            <span id="speed-display" style="font-family:'Playfair Display',serif;
+                         color:var(--accent); font-weight:700; min-width:80px;">
+                150 WPM
+            </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-size:0.85rem; color:var(--ink-light);">Mode:</span>
+            <strong id="live-mode-display" style="font-family:'Playfair Display',serif; color:var(--accent);">
+            </strong>
+        </div>
+        <button id="pause-btn" onclick="togglePause()" class="btn btn-outline-secondary btn-sm px-3">
+            ⏸ Pause
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODE DISPLAYS
+═══════════════════════════════════════════════ -->
+
+<!-- 1. HIGHLIGHT + SPOTLIGHT: full text -->
+<div class="card p-4 p-md-5 mb-4" id="reading-card" style="display:none;">
+    <div id="reading-text" class="lang-content reading-text-content" style="font-size:1.15rem; line-height:2.2;
+                color:var(--ink); max-width:750px; margin:0 auto;">
+    </div>
+</div>
+
+<!-- 2. SCROLL: viewport -->
+<div class="card p-4 mb-4" id="scroll-card" style="display:none;">
+    <div id="scroll-viewport">
+        <div class="scroll-line-indicator"></div>
+        <div id="scroll-content" class="lang-content reading-text-content" style="font-size:1.2rem; line-height:2.4;
+                    color:var(--ink); padding:0 1rem;">
+        </div>
+    </div>
+    <p style="text-align:center; color:var(--ink-light);
+              font-size:0.85rem; font-style:italic; margin-top:0.8rem;">
+        Keep your eyes on the red line — let the text flow past.
+    </p>
+</div>
+
+<!-- 3. RSVP: single word display -->
+<div class="card p-4 mb-4" id="rsvp-card" style="display:none;">
+    <div id="rsvp-display" class="lang-content reading-text-content">
+        Ready
+    </div>
+    <!-- RSVP progress bar -->
+    <div style="background:var(--parchment-dark); border-radius:4px;
+                height:6px; margin-top:1.5rem; overflow:hidden;">
+        <div id="rsvp-progress" style="height:100%; background:var(--accent);
+                    width:0%; transition:width 0.3s linear;">
+        </div>
+    </div>
+    <div class="d-flex justify-content-between mt-1">
+        <span id="rsvp-word-count" style="font-size:0.8rem; color:var(--ink-light);">
+            0 / {{ text.word_count }}
+        </span>
+        <span style="font-size:0.8rem; color:var(--ink-light);">
+            ⚡ RSVP Mode — maximum focus!
+        </span>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     FINISH FORM
+═══════════════════════════════════════════════ -->
+<div class="text-center" id="finish-section" style="display:none;">
+    <form method="POST" action="{% url 'finish_reading' session.id %}" id="finish-form">
+        {% csrf_token %}
+        <input type="hidden" name="time_spent" id="time-spent-input" value="0">
+        <input type="hidden" name="chunk_size" id="chunk-size-input" value="1">
+        <input type="hidden" name="reading_mode" id="reading-mode-input" value="highlight">
+        <button type="submit" class="btn btn-primary btn-lg px-5">
+            ✅ Done — Take the Quiz
+        </button>
+    </form>
+</div>
+
+<!-- RAW TEXT -->
+<script>
+    const RAW_TEXT = "{{ text.content|escapejs }}";
+    const WORD_COUNT = {{ text.word_count }};
+</script>
+
+<script>
+    // ─────────────────────────────────────────────────────
+    // CONFIG
+    // ─────────────────────────────────────────────────────
+    const MODE_DESCRIPTIONS = {
+        highlight: "🟡 Highlight — A moving highlight follows word by word through the full text. Ideal for beginners. Chunk size applies.",
+        scroll: "📜 Scroll — The text scrolls upward automatically. Fix your eyes on the center red line and let the words come to you.",
+        spotlight: "🔦 Spotlight — The full text is visible but only the current line is bright. All other lines are dimmed to eliminate distraction.",
+        rsvp: "⚡ RSVP — Words flash one at a time center-screen in large font. No eye movement needed. The hardest mode — maximum score bonus!",
+    };
+
+    const CHUNK_BONUS_MAP = { 1: 1.0, 2: 1.2, 3: 1.5, 4: 1.8, 5: 2.2 };
+
+    // ─────────────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────────────
+    let words = [];
+    let lines = [];
+    let currentIndex = 0;
+    let currentLine = 0;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let wordInterval = null;
+    let scrollInterval = null;
+    let isPaused = false;
+    let wpm = 150;
+    let chunkSize = 1;
+    let readingMode = 'highlight';
+
+    // ─────────────────────────────────────────────────────
+    // MODE SELECTOR
+    // ─────────────────────────────────────────────────────
+    function selectMode(mode) {
+        readingMode = mode;
+        const modes = ['highlight', 'scroll', 'spotlight', 'rsvp'];
+
+        modes.forEach(m => {
+            const card = document.getElementById('mode-card-' + m);
+            card.style.borderColor = (m === mode) ? 'var(--accent)' : 'var(--border)';
+            card.style.background = (m === mode) ? 'var(--parchment-dark)' : '';
+            // update bonus text color
+            const bonusEl = card.querySelector('div:last-child');
+            bonusEl.style.color = (m === mode) ? 'var(--accent)' : 'var(--ink-light)';
+        });
+
+        document.getElementById('mode-description').textContent =
+            MODE_DESCRIPTIONS[mode];
+
+        // chunk only relevant for highlight mode
+        document.getElementById('chunk-section').style.display =
+            (mode === 'highlight') ? '' : 'none';
+    }
+
+    // ─────────────────────────────────────────────────────
+    // CHUNK SELECTOR
+    // ─────────────────────────────────────────────────────
+    function selectChunk(n) {
+        chunkSize = n;
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.getElementById('chunk-btn-' + i);
+            btn.style.background = (i === n) ? 'var(--accent)' : '';
+            btn.style.borderColor = (i === n) ? 'var(--accent)' : 'var(--border)';
+            btn.style.color = (i === n) ? '#fff' : 'var(--ink)';
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // BUILD TEXT FOR HIGHLIGHT / SPOTLIGHT
+    // ─────────────────────────────────────────────────────
+    function buildHighlightText() {
+        const container = document.getElementById('reading-text');
+        container.innerHTML = '';
+        const paragraphs = RAW_TEXT.trim().split(/\n+/);
+        let wordIndex = 0;
+
+        paragraphs.forEach(para => {
+            if (!para.trim()) return;
+            const p = document.createElement('p');
+            para.trim().split(/\s+/).forEach(word => {
+                const span = document.createElement('span');
+                span.textContent = word + ' ';
+                span.id = 'w' + wordIndex;
+                span.style.cssText = 'border-radius:3px; padding:1px 3px; transition:background 0.08s;';
+                p.appendChild(span);
+                wordIndex++;
+            });
+            container.appendChild(p);
+        });
+        words = Array.from(container.querySelectorAll('span'));
+    }
+
+    function buildSpotlightText() {
+        const container = document.getElementById('reading-text');
+        container.innerHTML = '';
+        const paragraphs = RAW_TEXT.trim().split(/\n+/);
+
+        paragraphs.forEach((para, pIdx) => {
+            if (!para.trim()) return;
+            // split into lines of ~10 words
+            const paraWords = para.trim().split(/\s+/);
+            const chunkWords = 10;
+            for (let i = 0; i < paraWords.length; i += chunkWords) {
+                const lineText = paraWords.slice(i, i + chunkWords).join(' ');
+                const div = document.createElement('div');
+                div.className = 'spotlight-line';
+                div.textContent = lineText;
+                container.appendChild(div);
+            }
+        });
+        lines = Array.from(container.querySelectorAll('.spotlight-line'));
+    }
+
+    function buildScrollText() {
+        const container = document.getElementById('scroll-content');
+        container.innerHTML = '';
+        RAW_TEXT.trim().split(/\n+/).forEach(para => {
+            if (!para.trim()) return;
+            const p = document.createElement('p');
+            p.textContent = para.trim();
+            p.style.margin = '0 0 1rem 0';
+            container.appendChild(p);
+        });
+    }
+
+    function buildRsvpWords() {
+        words = RAW_TEXT.trim().split(/\s+/);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // START READING
+    // ─────────────────────────────────────────────────────
+    function startReading() {
+        wpm = parseInt(document.getElementById('start-speed-slider').value);
+
+        // hide setup, show controls
+        document.getElementById('start-section').style.display = 'none';
+        document.getElementById('controls-bar').style.display = 'block';
+        document.getElementById('speed-slider').value = wpm;
+        document.getElementById('speed-display').textContent = wpm + ' WPM';
+        document.getElementById('reading-mode-input').value = readingMode;
+        document.getElementById('chunk-size-input').value = chunkSize;
+
+        const modeLabels = {
+            highlight: '🟡 Highlight',
+            scroll: '📜 Scroll',
+            spotlight: '🔦 Spotlight',
+            rsvp: '⚡ RSVP',
+        };
+        document.getElementById('live-mode-display').textContent = modeLabels[readingMode];
+
+        // start wall clock
+        timerInterval = setInterval(() => {
+            timerSeconds++;
+            const m = Math.floor(timerSeconds / 60);
+            const s = timerSeconds % 60;
+            document.getElementById('timer-display').textContent =
+                m + ':' + String(s).padStart(2, '0');
+        }, 1000);
+
+        // launch correct mode
+        if (readingMode === 'highlight') startHighlight();
+        else if (readingMode === 'scroll') startScroll();
+        else if (readingMode === 'spotlight') startSpotlight();
+        else if (readingMode === 'rsvp') startRsvp();
+    }
+
+    // ─────────────────────────────────────────────────────
+    // MODE 1 — HIGHLIGHT
+    // ─────────────────────────────────────────────────────
+    function startHighlight() {
+        buildHighlightText();
+        document.getElementById('reading-card').style.display = 'block';
+        scheduleHighlight();
+    }
+
+    function scheduleHighlight() {
+        const ms = (chunkSize / wpm) * 60000;
+        wordInterval = setInterval(() => {
+            if (isPaused) return;
+            highlightChunk(currentIndex);
+            currentIndex += chunkSize;
+        }, ms);
+    }
+
+    function highlightChunk(startIdx) {
+        words.forEach(w => {
+            w.style.backgroundColor = 'transparent';
+            w.style.color = 'var(--ink)';
+            w.style.fontWeight = 'normal';
+        });
+        if (startIdx >= words.length) {
+            clearInterval(wordInterval);
+            showFinish();
+            return;
+        }
+        for (let i = startIdx; i < Math.min(startIdx + chunkSize, words.length); i++) {
+            words[i].style.backgroundColor = 'var(--accent)';
+            words[i].style.color = '#fff';
+            words[i].style.fontWeight = '700';
+        }
+        words[startIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ─────────────────────────────────────────────────────
+    // MODE 2 — SCROLL
+    // ─────────────────────────────────────────────────────
+    function startScroll() {
+        buildScrollText();
+        document.getElementById('scroll-card').style.display = 'block';
+
+        const content = document.getElementById('scroll-content');
+        const viewport = document.getElementById('scroll-viewport');
+        const totalH = content.scrollHeight;
+        const viewH = viewport.offsetHeight;
+
+        // pixels per second based on WPM
+        // average word width ≈ 6 chars → estimate total scroll distance
+        const pxPerSecond = (totalH / (WORD_COUNT / wpm * 60));
+        let currentY = 0;
+        content.style.top = '10px';
+
+        scrollInterval = setInterval(() => {
+            if (isPaused) return;
+            currentY += pxPerSecond / 20; // update 20× per second
+            content.style.top = '-' + currentY + 'px';
+
+            if (currentY >= totalH - viewH / 2) {
+                clearInterval(scrollInterval);
+                showFinish();
+            }
+        }, 50);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // MODE 3 — SPOTLIGHT
+    // ─────────────────────────────────────────────────────
+    function startSpotlight() {
+        buildSpotlightText();
+        document.getElementById('reading-card').style.display = 'block';
+
+        // start with first line active
+        spotlightLine(0);
+
+        const msPerLine = (10 / wpm) * 60000; // 10 words per line
+        wordInterval = setInterval(() => {
+            if (isPaused) return;
+            currentLine++;
+            if (currentLine >= lines.length) {
+                clearInterval(wordInterval);
+                showFinish();
+                return;
+            }
+            spotlightLine(currentLine);
+        }, msPerLine);
+    }
+
+    function spotlightLine(idx) {
+        lines.forEach((l, i) => l.classList.toggle('active', i === idx));
+        if (lines[idx]) {
+            lines[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // MODE 4 — RSVP
+    // ─────────────────────────────────────────────────────
+    function startRsvp() {
+        buildRsvpWords();
+        document.getElementById('rsvp-card').style.display = 'block';
+        scheduleRsvp();
+    }
+
+    function scheduleRsvp() {
+        const ms = (1 / wpm) * 60000;
+        wordInterval = setInterval(() => {
+            if (isPaused) return;
+            if (currentIndex >= words.length) {
+                clearInterval(wordInterval);
+                document.getElementById('rsvp-display').textContent = '✅ Done!';
+                showFinish();
+                return;
+            }
+            document.getElementById('rsvp-display').textContent =
+                words[currentIndex];
+            document.getElementById('rsvp-word-count').textContent =
+                (currentIndex + 1) + ' / ' + words.length;
+            document.getElementById('rsvp-progress').style.width =
+                ((currentIndex + 1) / words.length * 100) + '%';
+            currentIndex++;
+        }, ms);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // CONTROLS
+    // ─────────────────────────────────────────────────────
+    function changeSpeed(val) {
+        wpm = parseInt(val);
+        document.getElementById('speed-display').textContent = wpm + ' WPM';
+        // restart interval with new speed
+        clearInterval(wordInterval);
+        clearInterval(scrollInterval);
+
+        if (readingMode === 'highlight') scheduleHighlight();
+        else if (readingMode === 'scroll') startScroll();
+        else if (readingMode === 'spotlight') { const ms = (10 / wpm) * 60000; wordInterval = setInterval(() => { if (isPaused) return; currentLine++; if (currentLine >= lines.length) { clearInterval(wordInterval); showFinish(); return; } spotlightLine(currentLine); }, ms); }
+        else if (readingMode === 'rsvp') scheduleRsvp();
+    }
+
+    function togglePause() {
+        isPaused = !isPaused;
+        document.getElementById('pause-btn').textContent =
+            isPaused ? '▶ Resume' : '⏸ Pause';
+    }
+
+    function showFinish() {
+        document.getElementById('finish-section').style.display = 'block';
+        document.getElementById('pause-btn').style.display = 'none';
+    }
+
+    // ─────────────────────────────────────────────────────
+    // SUBMIT
+    // ─────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        selectMode('highlight');
+        selectChunk(1);
+
+        document.getElementById('finish-form').addEventListener('submit', () => {
+            clearInterval(timerInterval);
+            clearInterval(wordInterval);
+            clearInterval(scrollInterval);
+            document.getElementById('time-spent-input').value = timerSeconds;
+            document.getElementById('chunk-size-input').value = chunkSize;
+            document.getElementById('reading-mode-input').value = readingMode;
+        });
+    });
+    // ─────────────────────────────────────────────────────
+// TYPOGRAPHY PREFERENCES
+// ─────────────────────────────────────────────────────
+const FONT_SIZES = [
+    { value: '0.9rem',  label: 'Compact'     },
+    { value: '1.05rem', label: 'Small'       },
+    { value: '1.2rem',  label: 'Normal'      },
+    { value: '1.45rem', label: 'Large'       },
+    { value: '1.75rem', label: 'Extra Large' },
+];
+
+const FONT_FAMILIES = {
+    'Lora':           "'Lora', Georgia, serif",
+    'Georgia':        "Georgia, 'Times New Roman', serif",
+    'Merriweather':   "'Merriweather', Georgia, serif",
+    'Open Sans':      "'Open Sans', Arial, sans-serif",
+    'Lexie Readable': "Arial, Helvetica, sans-serif",
+    'Courier Prime':  "'Courier Prime', 'Courier New', monospace",
+};
+
+// current preferences
+var currentSize    = '{{ prefs.font_size }}';
+var currentFont    = '{{ prefs.font_family }}';
+var currentSpacing = '{{ prefs.line_spacing }}';
+
+// find index of current size
+var currentSizeIdx = FONT_SIZES.findIndex(function(s) {
+    return s.value === currentSize;
+});
+if (currentSizeIdx < 0) currentSizeIdx = 2;
+
+function applyTypography() {
+    // apply to all reading text elements
+    var elements = document.querySelectorAll(
+        '#reading-text, #scroll-content, #rsvp-display, .reading-text-content'
+    );
+    elements.forEach(function(el) {
+        el.style.fontSize   = currentSize;
+        el.style.fontFamily = FONT_FAMILIES[currentFont] || FONT_FAMILIES['Lora'];
+        el.style.lineHeight = currentSpacing;
+    });
+}
+
+// ── SETUP PANEL ──────────────────────────────────────
+function updateSetupSize(idx) {
+    currentSizeIdx = parseInt(idx);
+    currentSize    = FONT_SIZES[currentSizeIdx].value;
+    document.getElementById('setup-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+    document.getElementById('font-preview').style.fontSize   = currentSize;
+    document.getElementById('font-preview').style.lineHeight = currentSpacing;
+    // sync live slider
+    document.getElementById('live-size-slider').value = idx;
+    document.getElementById('live-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+    applyTypography();
+}
+
+function updateSetupFont(val) {
+    currentFont = val;
+    document.getElementById('font-preview').style.fontFamily =
+        FONT_FAMILIES[val] || FONT_FAMILIES['Lora'];
+    // sync live select
+    document.getElementById('live-font-select').value = val;
+    applyTypography();
+}
+
+function selectSpacing(val) {
+    currentSpacing = val;
+    var ids = ['compact','normal','relaxed'];
+    var vals = ['1.6','2.0','2.6'];
+    ids.forEach(function(id, i) {
+        var btn = document.getElementById('sp-' + id);
+        btn.className = 'btn btn-sm flex-fill ' +
+            (vals[i] === val ? 'btn-primary' : 'btn-outline-secondary');
+        btn.style.fontSize = '0.78rem';
+        btn.style.padding  = '0.3rem';
+    });
+    document.getElementById('font-preview').style.lineHeight = val;
+    // sync live buttons
+    selectLiveSpacing(val);
+    applyTypography();
+}
+
+// ── LIVE FLOATING PANEL ──────────────────────────────
+function updateLiveSize(idx) {
+    currentSizeIdx = parseInt(idx);
+    currentSize    = FONT_SIZES[currentSizeIdx].value;
+    document.getElementById('live-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+    // sync setup slider
+    document.getElementById('setup-size-slider').value = idx;
+    document.getElementById('setup-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+    applyTypography();
+}
+
+function updateLiveFont(val) {
+    currentFont = val;
+    // sync setup select
+    document.getElementById('setup-font-select').value = val;
+    applyTypography();
+}
+
+function selectLiveSpacing(val) {
+    currentSpacing = val;
+    var ids  = ['compact','normal','relaxed'];
+    var vals = ['1.6','2.0','2.6'];
+    ids.forEach(function(id, i) {
+        var btn = document.getElementById('live-sp-' + id);
+        btn.className = 'btn btn-sm flex-fill ' +
+            (vals[i] === val ? 'btn-primary' : 'btn-outline-secondary');
+        btn.style.fontSize = '0.72rem';
+        btn.style.padding  = '0.25rem';
+        // sync setup buttons too
+        var setupBtn = document.getElementById('sp-' + id);
+        if (setupBtn) {
+            setupBtn.className = 'btn btn-sm flex-fill ' +
+                (vals[i] === val ? 'btn-primary' : 'btn-outline-secondary');
+        }
+    });
+    applyTypography();
+}
+
+// ── FLOATING TOGGLE ───────────────────────────────────
+function toggleFloating() {
+    var panel = document.getElementById('floating-prefs');
+    panel.style.display = (panel.style.display === 'none' || !panel.style.display)
+        ? 'block' : 'none';
+}
+
+// ── SAVE TO DB ────────────────────────────────────────
+function savePreferences() {
+    fetch("{% url 'save_preferences' %}", {
+        method:  'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken':  getCsrfToken(),
+        },
+        body: JSON.stringify({
+            font_size:    currentSize,
+            font_family:  currentFont,
+            line_spacing: currentSpacing,
+        }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var confirm = document.getElementById('save-confirm');
+        confirm.style.display = 'block';
+        setTimeout(function() {
+            confirm.style.display = 'none';
+        }, 2000);
+    });
+}
+
+function getCsrfToken() {
+    var value = '; ' + document.cookie;
+    var parts = value.split('; csrftoken=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+}
+
+// ── INIT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // set sliders and selects to saved preferences
+    document.getElementById('setup-size-slider').value = currentSizeIdx;
+    document.getElementById('live-size-slider').value  = currentSizeIdx;
+    document.getElementById('setup-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+    document.getElementById('live-size-label').textContent =
+        FONT_SIZES[currentSizeIdx].label;
+
+    document.getElementById('setup-font-select').value = currentFont;
+    document.getElementById('live-font-select').value  = currentFont;
+
+    document.getElementById('font-preview').style.fontSize   = currentSize;
+    document.getElementById('font-preview').style.fontFamily =
+        FONT_FAMILIES[currentFont] || FONT_FAMILIES['Lora'];
+    document.getElementById('font-preview').style.lineHeight = currentSpacing;
+
+    selectSpacing(currentSpacing);
+
+    // apply to text immediately if already reading
+    applyTypography();
+});
+</script>
+<!-- ═══════════════════════════════════════
+     FLOATING TYPOGRAPHY PANEL
+═══════════════════════════════════════ -->
+<button id="floating-toggle" onclick="toggleFloating()" title="Reading Settings">
+    🖋️
+</button>
+
+<div id="floating-prefs" class="card p-3" style="box-shadow:0 8px 30px rgba(0,0,0,0.15);">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong style="font-family:'Playfair Display',serif;
+                       color:var(--accent); font-size:0.95rem;">
+            🖋️ Reading Style
+        </strong>
+        <button onclick="toggleFloating()" style="background:none; border:none;
+                       color:var(--ink-light); cursor:pointer;
+                       font-size:1.1rem; padding:0;">
+            ✕
+        </button>
+    </div>
+
+    <!-- SIZE -->
+    <label style="font-size:0.78rem; color:var(--ink-light);
+                  text-transform:uppercase; letter-spacing:0.5px;">
+        Size
+    </label>
+    <div class="d-flex align-items-center gap-2 mt-1 mb-2">
+        <span style="font-size:0.75rem; color:var(--ink-light);">A</span>
+        <input type="range" id="live-size-slider" min="0" max="4" value="2" step="1"
+            style="flex:1; accent-color:var(--accent);" oninput="updateLiveSize(this.value)">
+        <span style="font-size:1.1rem; color:var(--ink-light);">A</span>
+    </div>
+    <div style="text-align:center; font-size:0.78rem;
+                color:var(--accent); margin-bottom:0.8rem;" id="live-size-label">Normal</div>
+
+    <!-- FONT -->
+    <label style="font-size:0.78rem; color:var(--ink-light);
+                  text-transform:uppercase; letter-spacing:0.5px;">
+        Font
+    </label>
+    <select id="live-font-select" onchange="updateLiveFont(this.value)" style="width:100%; margin-top:0.3rem; margin-bottom:0.8rem;
+                   background:#fff; border:1px solid var(--border);
+                   border-radius:3px; padding:0.3rem 0.5rem;
+                   font-size:0.85rem; color:var(--ink);">
+        <option value="Lora">Lora (Classic)</option>
+        <option value="Georgia">Georgia (Traditional)</option>
+        <option value="Merriweather">Merriweather (Strong)</option>
+        <option value="Open Sans">Open Sans (Modern)</option>
+        <option value="Lexie Readable">Lexie (Accessible)</option>
+        <option value="Courier Prime">Courier (Focus)</option>
+    </select>
+
+    <!-- SPACING -->
+    <label style="font-size:0.78rem; color:var(--ink-light);
+                  text-transform:uppercase; letter-spacing:0.5px;">
+        Spacing
+    </label>
+    <div class="d-flex gap-1 mt-1 mb-3">
+        <button type="button" onclick="selectLiveSpacing('1.6')" id="live-sp-compact"
+            class="btn btn-sm btn-outline-secondary flex-fill" style="font-size:0.72rem; padding:0.25rem;">
+            Compact
+        </button>
+        <button type="button" onclick="selectLiveSpacing('2.0')" id="live-sp-normal"
+            class="btn btn-sm btn-primary flex-fill" style="font-size:0.72rem; padding:0.25rem;">
+            Normal
+        </button>
+        <button type="button" onclick="selectLiveSpacing('2.6')" id="live-sp-relaxed"
+            class="btn btn-sm btn-outline-secondary flex-fill" style="font-size:0.72rem; padding:0.25rem;">
+            Relaxed
+        </button>
+    </div>
+
+    <!-- SAVE -->
+    <button onclick="savePreferences()" class="btn btn-primary w-100 btn-sm">
+        💾 Save Preferences
+    </button>
+    <div id="save-confirm" style="display:none; text-align:center; font-size:0.78rem;
+                color:#4a8a3a; margin-top:0.4rem; font-style:italic;">
+        ✅ Saved!
+    </div>
+</div>
+{% endwith %}
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1>Badges & Achievements</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        {{ earned_count }} of {{ total_count }} badges unlocked.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="mb-4">
+    <div style="background:var(--parchment-dark); border-radius:4px;
+                height:12px; overflow:hidden; border:1px solid var(--border);">
+        <div style="height:100%; background:var(--accent);
+                    width:{{ progress_pct }}%;
+                    transition: width 1s ease;">
+        </div>
+    </div>
+    <div class="d-flex justify-content-between mt-1">
+        <span style="font-size:0.82rem; color:var(--ink-light);">0</span>
+        <span style="font-size:0.82rem; color:var(--accent); font-weight:600;">
+            {{ earned_count }} / {{ total_count }} badges
+        </span>
+        <span style="font-size:0.82rem; color:var(--ink-light);">{{ total_count }}</span>
+    </div>
+</div>
+
+<!-- BADGES BY CATEGORY -->
+{% for category, badges in badges_by_category.items %}
+<div class="mb-4">
+    <h5 style="font-family:'Playfair Display',serif;
+               color:var(--accent); margin-bottom:1rem;
+               border-bottom:1px solid var(--border); padding-bottom:0.5rem;">
+        {{ category }}
+    </h5>
+    <div class="row g-3">
+        {% for item in badges %}
+        <div class="col-6 col-md-3">
+            <div class="card p-3 text-center h-100"
+                 style="border:2px solid
+                 {% if item.earned %}var(--accent-gold){% else %}var(--border){% endif %};
+                 background:
+                 {% if item.earned %}linear-gradient(135deg,#fdf8f0,#f5ead0){% else %}#f9f9f7{% endif %};
+                 transition: all 0.2s;
+                 {% if not item.earned %}opacity:0.55; filter:grayscale(30%);{% endif %}">
+
+                <!-- ICON -->
+                <div style="font-size:2.5rem; margin-bottom:0.4rem;
+                            {% if not item.earned %}filter:grayscale(80%);{% endif %}">
+                    {{ item.badge.icon }}
+                </div>
+
+                <!-- NAME -->
+                <div style="font-family:'Playfair Display',serif;
+                            font-weight:700; font-size:0.9rem;
+                            color:{% if item.earned %}var(--accent){% else %}var(--ink-light){% endif %};">
+                    {{ item.badge.name }}
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div style="font-size:0.78rem; color:var(--ink-light);
+                            font-style:italic; margin-top:0.3rem; line-height:1.4;">
+                    {{ item.badge.description }}
+                </div>
+
+                <!-- EARNED DATE -->
+                {% if item.earned %}
+                <div style="font-size:0.72rem; color:var(--accent-gold);
+                            margin-top:0.5rem; font-weight:600;">
+                    ✓ {{ item.earned_at|date:"d M Y" }}
+                </div>
+                {% else %}
+                <div style="font-size:0.72rem; color:var(--border);
+                            margin-top:0.5rem;">
+                    🔒 Locked
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<!-- BACK -->
+<div class="text-center mt-2 mb-5">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        ← Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

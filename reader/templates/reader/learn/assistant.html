@@ -1,0 +1,306 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="text-center mb-4">
+    <h1>🤖 Speed Reading Assistant</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Your personal AI coach — expert in speed reading theory and practice.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT: CHAT -->
+    <div class="col-lg-8">
+
+        <!-- CHAT HISTORY -->
+        <div class="card mb-3"
+             style="height:480px; overflow-y:auto;" id="chat-box">
+            <div class="p-3" id="chat-messages">
+
+                <!-- WELCOME MESSAGE -->
+                <div class="d-flex gap-3 mb-3">
+                    <div style="font-size:1.8rem; flex-shrink:0;">🤖</div>
+                    <div class="p-3"
+                         style="background:var(--parchment-dark);
+                                border-radius:0 8px 8px 8px; flex:1;
+                                font-family:'Lora',serif; font-size:0.95rem;
+                                color:var(--ink); line-height:1.7;">
+                        Welcome! I am your Speed Reading Assistant. I can help you with:
+                        <br><br>
+                        • Speed reading techniques (RSVP, chunking, previewing...)
+                        <br>
+                        • The neuroscience and psychology of reading
+                        <br>
+                        • Practical exercises and training methods
+                        <br>
+                        • How to improve your WPM and comprehension
+                        <br><br>
+                        <em>Ask me anything about speed reading!</em>
+                    </div>
+                </div>
+
+                <!-- PREVIOUS MESSAGES -->
+                {% for msg in history %}
+                <div class="d-flex gap-3 mb-3
+                     {% if msg.role == 'user' %}flex-row-reverse{% endif %}">
+                    <div style="font-size:1.5rem; flex-shrink:0;">
+                        {% if msg.role == 'user' %}👤{% else %}🤖{% endif %}
+                    </div>
+                    <div class="p-3"
+                         style="background:{% if msg.role == 'user' %}var(--accent){% else %}var(--parchment-dark){% endif %};
+                                color:{% if msg.role == 'user' %}#fff{% else %}var(--ink){% endif %};
+                                border-radius:{% if msg.role == 'user' %}8px 0 8px 8px{% else %}0 8px 8px 8px{% endif %};
+                                max-width:85%; font-family:'Source Sans 3',sans-serif;
+                                font-size:0.92rem; line-height:1.6;">
+                        {% if msg.role == 'assistant' %}
+                            {% if msg.from_cache %}
+                            <span style="font-size:0.72rem; color:var(--accent-gold);
+                                         display:block; margin-bottom:0.4rem;">
+                                💾 From knowledge base
+                            </span>
+                            {% endif %}
+                            {{ msg.content|linebreaks }}
+                        {% else %}
+                            {{ msg.content }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- QUICK SEARCH -->
+        <div class="card p-3 mb-3"
+             style="background:#fdf8f0; border:1px solid var(--accent-gold);">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <span style="font-size:0.85rem; color:var(--ink-light);
+                             white-space:nowrap;">
+                    🔍 Quick search:
+                </span>
+                {% for q in quick_questions %}
+                <button type="button"
+                        onclick="quickAsk('{{ q }}')"
+                        class="btn btn-sm btn-outline-secondary"
+                        style="font-size:0.8rem; border-radius:20px;">
+                    {{ q }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- INPUT -->
+        <div class="card p-3">
+            <div class="d-flex gap-2">
+                <input type="text"
+                       id="question-input"
+                       placeholder="Ask anything about speed reading..."
+                       style="flex:1; padding:0.6rem 0.9rem;
+                              border:1px solid var(--border); border-radius:3px;
+                              background:#fff; font-family:'Source Sans 3',sans-serif;
+                              font-size:0.95rem; color:var(--ink);"
+                       onfocus="this.style.borderColor='var(--accent)'"
+                       onblur="this.style.borderColor='var(--border)'"
+                       onkeydown="if(event.key==='Enter') askQuestion()">
+                <button onclick="askQuestion()"
+                        id="ask-btn"
+                        class="btn btn-primary px-4">
+                    Ask →
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: SEARCH + STATS -->
+    <div class="col-lg-4">
+
+        <!-- STATS -->
+        <div class="card p-3 mb-3" style="background:#fdf8f0;">
+            <h6 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.8rem;">
+                📊 Your Stats
+            </h6>
+            <div class="stat-box mb-2">
+                <div class="stat-value" style="font-size:1.5rem;">
+                    {{ total_questions }}
+                </div>
+                <div class="stat-label">Questions asked</div>
+            </div>
+            <p style="font-size:0.8rem; color:var(--ink-light);
+                      font-style:italic; margin:0; text-align:center;">
+                {% if total_questions < 10 %}
+                    {{ 10|add:"-"|add:total_questions }} more to earn
+                    <strong>Curious Mind 🔍</strong>
+                {% elif total_questions < 25 %}
+                    {{ 25|add:"-"|add:total_questions }} more to earn
+                    <strong>Theorist 📜</strong>
+                {% else %}
+                    Maximum badge achieved! 🏆
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- SUGGESTED TOPICS -->
+        <div class="card p-3 mb-3">
+            <h6 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.8rem;">
+                💡 Suggested Topics
+            </h6>
+            <div class="d-flex flex-column gap-1">
+                {% for topic in suggested_topics %}
+                <button type="button"
+                        onclick="quickAsk('{{ topic }}')"
+                        class="btn btn-outline-secondary btn-sm text-start"
+                        style="font-size:0.82rem; padding:0.4rem 0.8rem;">
+                    {{ topic }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- BACK -->
+        <a href="{% url 'learn_hub' %}"
+           class="btn btn-outline-secondary w-100">
+            ← Back to Academy
+        </a>
+
+    </div>
+</div>
+
+<!-- BADGE POPUP -->
+<div id="badge-popup"
+     style="display:none; position:fixed; bottom:20px; right:20px;
+            z-index:9999; max-width:300px;">
+</div>
+
+<script>
+function scrollToBottom() {
+    var box = document.getElementById('chat-box');
+    box.scrollTop = box.scrollHeight;
+}
+
+function quickAsk(question) {
+    document.getElementById('question-input').value = question;
+    askQuestion();
+}
+
+function askQuestion() {
+    var input    = document.getElementById('question-input');
+    var question = input.value.trim();
+    if (!question) return;
+
+    // show user message immediately
+    addMessage('user', question, false);
+    input.value = '';
+
+    // show loading
+    var loadingId = addLoading();
+
+    // disable button
+    document.getElementById('ask-btn').disabled = true;
+    document.getElementById('ask-btn').textContent = '...';
+
+    fetch("{% url 'assistant_ask' %}", {
+        method:  'POST',
+        headers: {
+            'Content-Type':     'application/json',
+            'X-CSRFToken':      getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ question: question }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        removeLoading(loadingId);
+        addMessage('assistant', data.answer, data.from_cache,
+                   data.cached_question, data.similarity);
+
+        // show badge popup if new badge earned
+        if (data.new_badges && data.new_badges.length > 0) {
+            data.new_badges.forEach(badge => showBadgePopup(badge));
+        }
+
+        document.getElementById('ask-btn').disabled   = false;
+        document.getElementById('ask-btn').textContent = 'Ask →';
+    })
+    .catch(err => {
+        removeLoading(loadingId);
+        addMessage('assistant', 'Sorry, an error occurred. Please try again.', false);
+        document.getElementById('ask-btn').disabled   = false;
+        document.getElementById('ask-btn').textContent = 'Ask →';
+    });
+}
+
+function addMessage(role, content, fromCache, cachedQuestion, similarity) {
+    var container = document.getElementById('chat-messages');
+    var div       = document.createElement('div');
+    div.className = 'd-flex gap-3 mb-3' + (role === 'user' ? ' flex-row-reverse' : '');
+
+    var cacheNote = '';
+    if (fromCache && cachedQuestion) {
+        cacheNote = '<span style="font-size:0.72rem; color:var(--accent-gold); display:block; margin-bottom:0.4rem;">💾 Similar question found (' + similarity + '% match)</span>';
+    }
+
+    var formattedContent = content.replace(/\n/g, '<br>');
+
+    div.innerHTML = '<div style="font-size:1.5rem; flex-shrink:0;">' +
+        (role === 'user' ? '👤' : '🤖') + '</div>' +
+        '<div class="p-3" style="background:' +
+        (role === 'user' ? 'var(--accent);color:#fff' :
+         'var(--parchment-dark);color:var(--ink)') +
+        ';border-radius:' +
+        (role === 'user' ? '8px 0 8px 8px' : '0 8px 8px 8px') +
+        ';max-width:85%;font-family:Source Sans 3,sans-serif;font-size:0.92rem;line-height:1.6;">' +
+        cacheNote + formattedContent + '</div>';
+
+    container.appendChild(div);
+    scrollToBottom();
+}
+
+function addLoading() {
+    var id        = 'loading-' + Date.now();
+    var container = document.getElementById('chat-messages');
+    var div       = document.createElement('div');
+    div.className = 'd-flex gap-3 mb-3';
+    div.id        = id;
+    div.innerHTML = '<div style="font-size:1.5rem;">🤖</div>' +
+        '<div class="p-3" style="background:var(--parchment-dark);' +
+        'border-radius:0 8px 8px 8px;color:var(--ink-light);font-style:italic;' +
+        'font-size:0.9rem;">Thinking...</div>';
+    container.appendChild(div);
+    scrollToBottom();
+    return id;
+}
+
+function removeLoading(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function showBadgePopup(badge) {
+    var popup = document.getElementById('badge-popup');
+    popup.innerHTML = '<div class="card p-3 text-center" style="background:linear-gradient(135deg,#fdf8f0,#fef3e0);border:2px solid var(--accent-gold);box-shadow:0 4px 20px rgba(0,0,0,0.15);">' +
+        '<div style="font-size:2rem;">' + badge.icon + '</div>' +
+        '<div style="font-family:Playfair Display,serif;color:var(--accent);font-weight:700;">' +
+        '🏆 Badge Unlocked!</div>' +
+        '<div style="font-size:0.9rem;color:var(--ink-light);">' + badge.name + '</div>' +
+        '</div>';
+    popup.style.display = 'block';
+    setTimeout(function() { popup.style.display = 'none'; }, 4000);
+}
+
+function getCookie(name) {
+    var value = '; ' + document.cookie;
+    var parts = value.split('; ' + name + '=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// scroll to bottom on load
+document.addEventListener('DOMContentLoaded', scrollToBottom);
+</script>
+
+{% endblock %}

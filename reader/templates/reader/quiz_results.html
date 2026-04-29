@@ -1,0 +1,370 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<!-- TITLE -->
+<div class="text-center mb-4">
+    <h1>Session Results</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Here is a full breakdown of your performance.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+<!-- NEWLY AWARDED BADGES -->
+{% if newly_awarded %}
+<div class="mb-4">
+    {% for badge in newly_awarded %}
+    <div class="card p-3 mb-2" style="background: linear-gradient(135deg, #fdf8f0, #f5ead0);
+                border: 2px solid var(--accent-gold);
+                border-radius: 8px; text-align:center;
+                animation: badgePop 0.5s ease;">
+        <div style="font-size:3rem; margin-bottom:0.3rem;">
+            {{ badge.icon }}
+        </div>
+        <div style="font-family:'Playfair Display',serif;
+                    font-size:1.3rem; color:var(--accent); font-weight:700;">
+            🎉 Badge Unlocked: {{ badge.name }}!
+        </div>
+        <div style="color:var(--ink-light); font-style:italic; font-size:0.95rem;">
+            {{ badge.description }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    @keyframes badgePop {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        60% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
+{% endif %}
+<!-- STREAK DISPLAY -->
+{% if current_streak > 0 %}
+<div class="card p-3 mb-4 text-center"
+     style="background:linear-gradient(135deg, #fdf8f0, #fef3e0);
+            border:2px solid
+            {% if current_streak >= 7 %}#e85d04
+            {% elif current_streak >= 3 %}#f48c06
+            {% else %}var(--accent-gold){% endif %};">
+
+    <div style="font-size:3rem; margin-bottom:0.3rem;">
+        {% if current_streak >= 30 %}💪
+        {% elif current_streak >= 7 %}🔥
+        {% elif current_streak >= 3 %}✨
+        {% else %}⭐{% endif %}
+    </div>
+
+    <div style="font-family:'Playfair Display',serif;
+                font-size:1.4rem; font-weight:700;
+                color:{% if current_streak >= 7 %}#e85d04{% else %}var(--accent){% endif %};">
+        {{ current_streak }} Day
+        {% if current_streak == 1 %}Streak Started!
+        {% else %}Streak! 🔥{% endif %}
+    </div>
+
+    {% if is_new_record %}
+    <div style="color:#e85d04; font-weight:600;
+                font-style:italic; margin-top:0.3rem;">
+        🏆 New personal record!
+    </div>
+    {% endif %}
+
+    <div style="color:var(--ink-light); font-size:0.85rem; margin-top:0.4rem;">
+        Longest streak: <strong style="color:var(--accent);">
+            {{ longest_streak }} day{{ longest_streak|pluralize }}
+        </strong>
+        {% if current_streak == 1 %}
+        &nbsp;·&nbsp; Come back tomorrow to build your streak!
+        {% elif current_streak < 7 %}
+        &nbsp;·&nbsp; {{ 7|add:"-"|add:current_streak }} more days to Week Warrior 🗓️
+        {% elif current_streak < 30 %}
+        &nbsp;·&nbsp; {{ 30|add:"-"|add:current_streak }} more days to Unstoppable 💪
+        {% else %}
+        &nbsp;·&nbsp; You are truly unstoppable! 💪
+        {% endif %}
+    </div>
+
+</div>
+{% endif %}
+<!-- SCORE CARDS -->
+<div class="row g-3 mb-2">
+
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" style="color:var(--accent);">{{ score }}%</div>
+            <div class="stat-label">Final Score</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ comprehension }}%</div>
+            <div class="stat-label">Correct Answers</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ session.wpm|floatformat:0 }}</div>
+            <div class="stat-label">Words / Min</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ multiplier }}×</div>
+            <div class="stat-label">Speed Multiplier</div>
+        </div>
+    </div>
+
+</div>
+{% if beat_record %}
+<div class="card p-3 mb-4 text-center"
+     style="background:#f0f5e8; border:2px solid #7aab6a;">
+    <div style="font-size:2.5rem; margin-bottom:0.3rem;">🎉</div>
+    <div style="font-family:'Playfair Display',serif;
+                font-size:1.2rem; font-weight:700; color:#4a8a3a;">
+        New Personal Record on this text!
+    </div>
+    <div style="color:var(--ink-light); font-size:0.9rem; margin-top:0.3rem;">
+        Previous best:
+        <strong style="color:#4a8a3a;">
+            {{ previous_best.score|floatformat:1 }}%
+        </strong>
+        &nbsp;→&nbsp;
+        New best:
+        <strong style="color:#4a8a3a;">
+            {{ score }}%
+        </strong>
+    </div>
+</div>
+
+{% elif previous_best %}
+<div class="card p-3 mb-4 text-center"
+     style="background:#fdf8f0; border:1px solid var(--border);">
+    <div style="font-size:0.9rem; color:var(--ink-light);">
+        🔁 Previous attempt on this text:
+        <strong style="color:var(--accent);">
+            {{ previous_best.score|floatformat:1 }}%
+        </strong>
+        &nbsp;·&nbsp;
+        {% if score >= previous_best.score %}
+        <span style="color:#4a8a3a; font-weight:600;">
+            ▲ +{{ score|floatformat:1 }}% improvement!
+        </span>
+        {% else %}
+        <span style="color:#a04040;">
+            Keep practicing — you'll beat it next time!
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<!-- SCORE EXPLANATION -->
+<div class="card p-4 mb-4" style="background:#fdf8f0; border-left:4px solid var(--accent-gold);">
+    <h5 style="font-family:'Playfair Display',serif; color:var(--accent); margin-bottom:1rem;">
+        📊 How your score was calculated
+    </h5>
+    <table style="width:100%; font-family:'Source Sans 3',sans-serif;
+                  font-size:0.95rem; color:var(--ink); border-collapse:collapse;">
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.5rem; color:var(--ink-light);">
+                ✅ Correct answers
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right;">
+                <strong>{{ correct }} / {{ total }}</strong>
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--ink-light);">
+                = {{ comprehension }}%
+            </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.5rem; color:var(--ink-light);">
+                ⏱️ Time limit chosen per question
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right;">
+                <strong>{{ session.time_spent }}s</strong>
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--ink-light);">
+                → multiplier {{ multiplier }}×
+            </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.5rem; color:var(--ink-light);">
+                📖 Reading speed
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right;">
+                <strong>{{ session.wpm|floatformat:0 }} WPM</strong>
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--ink-light);">
+                recorded
+            </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.5rem; color:var(--ink-light);">
+                👁️ Chunk size chosen
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right;">
+                <strong>{{ chunk_size }} word{{ chunk_size|pluralize }}</strong>
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--ink-light);">
+                → bonus {{ chunk_bonus }}×
+            </td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.5rem; color:var(--ink-light);">
+                👁️ Reading mode
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right;">
+                <strong>
+                    {% if reading_mode == 'highlight' %}🟡 Word Highlight
+                    {% elif reading_mode == 'scroll' %}📜 Scroll
+                    {% elif reading_mode == 'spotlight' %}🔦 Spotlight
+                    {% elif reading_mode == 'rsvp' %}⚡ RSVP
+                    {% endif %}
+                </strong>
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--ink-light);">
+                → bonus {{ mode_bonus }}×
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:0.8rem 0.5rem; font-weight:700; color:var(--accent);">
+                🏆 Final Score
+            </td>
+            <td colspan="2" style="padding:0.8rem 0.5rem; text-align:right;
+           font-family:'Playfair Display',serif;
+           font-size:1.1rem; font-weight:700; color:var(--accent);">
+                {{ comprehension }}% × {{ multiplier }}× × {{ chunk_bonus }}× × {{ mode_bonus }}× = {{ score }}%
+            </td>
+        </tr>
+
+    </table>
+    <p style="margin-top:1rem; margin-bottom:0;
+              font-size:0.85rem; color:var(--ink-light); font-style:italic;">
+        💡 The speed multiplier rewards you for choosing a shorter time limit.
+        5 seconds per question gives a 2.0× bonus — 60 seconds gives only 0.5×.
+    </p>
+</div>
+
+<!-- LEVEL INFO -->
+<div class="card p-3 mb-4 text-center" style="background:#fdf8f0; border:1px solid var(--border);">
+    <p style="margin:0; font-family:'Source Sans 3',sans-serif; color:var(--ink-light);">
+        Your current level:
+        <strong style="font-family:'Playfair Display',serif;
+                       color:var(--accent); font-size:1.1rem;">
+            Level {{ profile.current_level }}
+        </strong>
+        &nbsp;·&nbsp;
+        Average WPM:
+        <strong style="font-family:'Playfair Display',serif;
+                       color:var(--accent); font-size:1.1rem;">
+            {{ profile.average_wpm|floatformat:0 }}
+        </strong>
+        &nbsp;·&nbsp;
+        Average Score:
+        <strong style="font-family:'Playfair Display',serif;
+                       color:var(--accent); font-size:1.1rem;">
+            {{ profile.average_score|floatformat:1 }}%
+        </strong>
+    </p>
+    {% if score >= 80 %}
+    <p style="margin-top:0.5rem; margin-bottom:0;
+              color:#4a8a3a; font-weight:600; font-style:italic;">
+        🎉 Excellent work! Keep pushing your limits!
+    </p>
+    {% elif score >= 60 %}
+    <p style="margin-top:0.5rem; margin-bottom:0;
+              color:var(--accent-light); font-style:italic;">
+        👍 Good effort! Try a shorter time limit next session to boost your score.
+    </p>
+    {% else %}
+    <p style="margin-top:0.5rem; margin-bottom:0;
+              color:#a04040; font-style:italic;">
+        📚 Keep practicing! Focus on understanding the main ideas as you read.
+    </p>
+    {% endif %}
+</div>
+
+<!-- ANSWER REVIEW -->
+<h3 class="mb-3" style="font-family:'Playfair Display',serif;">
+    Answer Review
+</h3>
+
+{% for result in results %}
+<div class="card p-3 mb-2" style="border-left:4px solid
+     {% if result.is_correct %}#7aab6a{% else %}#c08080{% endif %};
+     background:#faf6ef;">
+
+    <p style="font-family:'Playfair Display',serif;
+              font-weight:600; color:var(--ink);
+              margin-bottom:0.4rem; font-size:1rem;">
+        {{ forloop.counter }}. {{ result.quiz.question }}
+    </p>
+
+    <!-- all 4 choices -->
+    <div style="font-family:'Source Sans 3',sans-serif;
+                font-size:0.92rem; margin-bottom:0.4rem;">
+        {% for letter, text in result.quiz.choices %}
+        <div style="padding:0.2rem 0;
+            {% if letter == result.quiz.correct_choice %}
+                color:#4a8a3a; font-weight:700;
+            {% elif letter == result.user_answer and not result.is_correct %}
+                color:#a04040; text-decoration:line-through;
+            {% else %}
+                color:var(--ink-light);
+            {% endif %}">
+            <strong>{{ letter }}.</strong> {{ text }}
+            {% if letter == result.quiz.correct_choice %} ✅{% endif %}
+            {% if letter == result.user_answer and not result.is_correct %} ✗{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <p style="margin:0; font-size:0.85rem; color:var(--ink-light);">
+        {% if result.is_correct %}
+        <span style="color:#4a8a3a; font-weight:600;">
+            ✅ Correct!
+        </span>
+        {% elif result.user_answer %}
+        <span style="color:#a04040; font-weight:600;">
+            ✗ You answered {{ result.user_answer }} —
+            correct answer was {{ result.quiz.correct_choice }}.
+        </span>
+        {% else %}
+        <span style="color:#a04040; font-weight:600;">
+            ⏰ Time ran out — correct answer was {{ result.quiz.correct_choice }}.
+        </span>
+        {% endif %}
+    </p>
+
+</div>
+{% endfor %}
+
+<!-- ACTIONS -->
+<div class="text-center mt-4 mb-5 d-flex gap-3 justify-content-center flex-wrap">
+    <a href="{% url 'retry_text' session.text.id %}"
+       class="btn btn-outline-secondary btn-lg px-4">
+        🔁 Retry This Text
+    </a>
+    <a href="{% url 'subject_select' %}" class="btn btn-primary btn-lg px-4">
+        📚 Read Another Text
+    </a>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-lg px-4">
+        🏠 Dashboard
+    </a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'reader/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <h2 class="text-center mb-4" style="font-family:'Rajdhani',sans-serif; color:#007acc;">
+                Welcome Back ⚡
+            </h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary w-100 mt-3">Login</button>
+            </form>
+            <p class="text-center mt-3" style="color:#888;">
+                No account yet? <a href="{% url 'register' %}" style="color:#007acc;">Register</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

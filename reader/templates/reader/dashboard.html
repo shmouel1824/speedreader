@@ -1,0 +1,346 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<!-- WELCOME -->
+<div class="text-center mt-2 mb-4">
+    <h1>Welcome, {{ user.username }}</h1>
+    <p style="color:var(--ink-light); font-style:italic; font-size:1.1rem;">
+        Your speed reading journey continues here.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ profile.current_level }}</div>
+            <div class="stat-label">Current Level</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ profile.average_wpm|floatformat:0 }}</div>
+            <div class="stat-label">Avg. WPM</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ profile.total_sessions }}</div>
+            <div class="stat-label">Sessions</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ profile.average_score|floatformat:1 }}%</div>
+            <div class="stat-label">Avg. Score</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'badges' %}" style="text-decoration:none;">
+            <div class="stat-box" style="cursor:pointer;">
+                <div class="stat-value">{{ earned_badges }}/{{ total_badges }}</div>
+                <div class="stat-label">🏆 Badges</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box" style="{% if profile.current_streak >= 7 %}
+                border-color:#e85d04;
+                background:linear-gradient(135deg,#fdf8f0,#fef3e0);
+                {% endif %}">
+            <div class="stat-value" style="{% if profile.current_streak >= 3 %}color:#e85d04;{% endif %}">
+                {% if profile.current_streak >= 7 %}🔥
+                {% elif profile.current_streak >= 3 %}✨
+                {% else %}⭐{% endif %}
+                {{ profile.current_streak }}
+            </div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ profile.longest_streak }}</div>
+            <div class="stat-label">Best Streak</div>
+        </div>
+    </div>
+</div>
+
+<!-- CHART SECTION -->
+{% if session_count > 0 %}
+
+<div class="card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h5 style="font-family:'Playfair Display',serif;
+                   color:var(--accent); margin:0;">
+            📈 Your Progress
+        </h5>
+        <div class="d-flex gap-2">
+            <button onclick="showChart('both')" id="btn-both" class="btn btn-sm btn-primary">
+                Both
+            </button>
+            <button onclick="showChart('wpm')" id="btn-wpm" class="btn btn-sm btn-outline-secondary">
+                WPM only
+            </button>
+            <button onclick="showChart('score')" id="btn-score" class="btn btn-sm btn-outline-secondary">
+                Score only
+            </button>
+        </div>
+    </div>
+
+    <div style="position:relative; height:280px;">
+        <canvas id="progressChart"></canvas>
+    </div>
+
+    <div class="d-flex justify-content-center gap-4 mt-3">
+        <span style="font-size:0.85rem; color:var(--ink-light);">
+            <span style="display:inline-block; width:14px; height:14px;
+                         background:#8b4513; border-radius:2px;
+                         vertical-align:middle; margin-right:5px;">
+            </span>
+            Words per Minute
+        </span>
+        <span style="font-size:0.85rem; color:var(--ink-light);">
+            <span style="display:inline-block; width:14px; height:14px;
+                         background:#c9a84c; border-radius:2px;
+                         vertical-align:middle; margin-right:5px;">
+            </span>
+            Comprehension Score
+        </span>
+    </div>
+</div>
+
+<!-- INSIGHT CARD -->
+<div class="card p-3 mb-4" style="background:#fdf8f0; border-left:4px solid var(--accent-gold);">
+    <h6 style="font-family:'Playfair Display',serif;
+               color:var(--accent); margin-bottom:0.5rem;">
+        💡 Your Reading Insight
+    </h6>
+    <p id="insight-text" style="margin:0; color:var(--ink-light);
+              font-style:italic; font-size:0.95rem;">
+    </p>
+</div>
+
+{% else %}
+
+<div class="card p-4 mb-4 text-center" style="background:#fdf8f0; border:1px dashed var(--border);">
+    <p style="color:var(--ink-light); font-style:italic;
+              font-size:1.1rem; margin:0;">
+        📊 Your progress chart will appear here after your first session.
+    </p>
+</div>
+
+{% endif %}
+<!-- STREAK WARNING -->
+{% if profile.last_session_date %}
+    {% if profile.current_streak > 0 %}
+    <div class="card p-3 mb-3 text-center"
+         style="background:linear-gradient(135deg,#fef3e0,#fdf8f0);
+                border:1px solid var(--accent-gold);">
+        <p style="margin:0; font-size:0.95rem; color:var(--ink-light);">
+            {% now "Y-m-d" as today_str %}
+            🔥 Keep your
+            <strong style="color:var(--accent);">
+                {{ profile.current_streak }}-day streak
+            </strong>
+            alive — come back and read today!
+        </p>
+    </div>
+    {% endif %}
+{% endif %}
+<!-- DAILY CHALLENGE CARD -->
+<div class="card p-4 mb-4"
+     style="background:linear-gradient(135deg,#fdf8f0,#fef3e0);
+            border:2px solid var(--accent-gold);">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h5 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.3rem;">
+                📅 Daily Challenge
+            </h5>
+            <p style="color:var(--ink-light); font-size:0.9rem;
+                      font-style:italic; margin:0;">
+                A new text every day — compete with all readers!
+            </p>
+        </div>
+        <a href="{% url 'daily_challenge' %}" class="btn btn-primary px-4">
+            View Today's Challenge →
+        </a>
+    </div>
+</div>
+<!-- LEARN CARD -->
+<div class="card p-4 mb-4"
+     style="background:linear-gradient(135deg,#f0f5fb,#e8f0fa);
+            border:2px solid #90a8c0;">
+    <div class="row align-items-center g-3">
+        <div class="col-md-8">
+            <h5 style="font-family:'Playfair Display',serif;
+                       color:#2a3a5a; margin-bottom:0.3rem;">
+                📚 Speed Reading Academy
+            </h5>
+            <p style="color:var(--ink-light); font-size:0.9rem;
+                      font-style:italic; margin:0;">
+                7 lessons · AI assistant · Build the theory behind your practice
+            </p>
+        </div>
+        <div class="col-md-4 text-center">
+            <a href="{% url 'learn_hub' %}"
+               class="btn btn-primary px-4">
+                Go to Academy →
+            </a>
+        </div>
+    </div>
+</div>
+<!-- START BUTTON -->
+<div class="text-center mt-2 mb-5">
+    <a href="{% url 'subject_select' %}" class="btn btn-primary btn-lg px-5">
+        📖 Start Reading Session
+    </a>
+</div>
+
+<!-- CHART JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    var labels = {{ chart_labels| safe }};
+    var wpmData = {{ chart_wpm| safe }};
+    var scoreData = {{ chart_scores| safe }};
+
+    if (labels && labels.length > 0) {
+
+        var ctx = document.getElementById('progressChart').getContext('2d');
+
+        var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'WPM',
+                        data: wpmData,
+                        borderColor: '#8b4513',
+                        backgroundColor: 'rgba(139,69,19,0.1)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#8b4513',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true,
+                        yAxisID: 'y',
+                    },
+                    {
+                        label: 'Score %',
+                        data: scoreData,
+                        borderColor: '#c9a84c',
+                        backgroundColor: 'rgba(201,168,76,0.08)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#c9a84c',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true,
+                        yAxisID: 'y1',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#2c2416',
+                        titleColor: '#c9a84c',
+                        bodyColor: '#f5f0e8',
+                        borderColor: '#c8b99a',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function (ctx) {
+                                if (ctx.dataset.label === 'WPM')
+                                    return '  WPM: ' + ctx.parsed.y;
+                                return '  Score: ' + ctx.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(200,185,154,0.2)' },
+                        ticks: { color: '#5c4f3a', font: { size: 11 } },
+                    },
+                    y: {
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'WPM',
+                            color: '#8b4513',
+                            font: { size: 11 }
+                        },
+                        grid: { color: 'rgba(200,185,154,0.2)' },
+                        ticks: { color: '#8b4513', font: { size: 11 } },
+                    },
+                    y1: {
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score %',
+                            color: '#c9a84c',
+                            font: { size: 11 }
+                        },
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: '#c9a84c',
+                            font: { size: 11 },
+                            callback: function (v) { return v + '%'; }
+                        },
+                    }
+                }
+            }
+        });
+
+        function showChart(mode) {
+            chart.data.datasets[0].hidden = (mode === 'score');
+            chart.data.datasets[1].hidden = (mode === 'wpm');
+            chart.update();
+            document.getElementById('btn-both').className =
+                mode === 'both' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+            document.getElementById('btn-wpm').className =
+                mode === 'wpm' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+            document.getElementById('btn-score').className =
+                mode === 'score' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+        }
+
+        // insight
+        var n = Math.min(3, wpmData.length);
+        var first3 = wpmData.slice(0, n).reduce(function (a, b) { return a + b; }, 0) / n;
+        var last3 = wpmData.slice(-n).reduce(function (a, b) { return a + b; }, 0) / n;
+        var wpmTrend = last3 - first3;
+        var scoreTrend = scoreData[scoreData.length - 1] - scoreData[0];
+        var maxWpm = Math.max.apply(null, wpmData);
+
+        var insight = '';
+        if (wpmTrend > 20) insight += 'Your reading speed improved by ' + Math.round(wpmTrend) + ' WPM — excellent! ';
+        else if (wpmTrend > 0) insight += 'Speed slowly improving (+' + Math.round(wpmTrend) + ' WPM). Keep going! ';
+        else insight += 'Speed is stable. Try larger chunks to improve. ';
+
+        if (scoreTrend > 10) insight += 'Comprehension grew by ' + Math.round(scoreTrend) + '% — remarkable! ';
+        else if (scoreTrend >= 0) insight += 'Comprehension is holding steady. ';
+        else insight += 'Comprehension dropped slightly — slow down a little. ';
+
+        insight += 'Your personal best is ' + maxWpm + ' WPM.';
+
+        var insightEl = document.getElementById('insight-text');
+        if (insightEl) insightEl.textContent = insight;
+    }
+</script>
+
+{% endblock %}

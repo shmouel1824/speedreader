@@ -1,0 +1,327 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<!-- TITLE -->
+<div class="text-center mb-4">
+    <h1>Reading History</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        A complete record of all your reading sessions.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+{% if sessions %}
+
+<!-- SUMMARY STRIP -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value">{{ sessions|length }}</div>
+            <div class="stat-label">Total Sessions</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="best-wpm">—</div>
+            <div class="stat-label">Best WPM</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="best-score">—</div>
+            <div class="stat-label">Best Score</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="avg-chunk">—</div>
+            <div class="stat-label">Avg. Chunk Size</div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="card p-3 mb-3" style="background:#fdf8f0;">
+    <div class="d-flex gap-3 align-items-center flex-wrap">
+        <span style="font-size:0.85rem; color:var(--ink-light);">
+            Filter:
+        </span>
+
+        <!-- search -->
+        <input type="text"
+               id="search-input"
+               placeholder="Search by title or subject..."
+               oninput="filterTable()"
+               style="flex:1; min-width:180px;
+                      background:#fff; border:1px solid var(--border);
+                      border-radius:3px; padding:0.35rem 0.7rem;
+                      font-family:'Source Sans 3',sans-serif;
+                      font-size:0.9rem; color:var(--ink);">
+
+        <!-- sort -->
+        <select id="sort-select"
+                onchange="sortTable()"
+                style="background:#fff; border:1px solid var(--border);
+                       border-radius:3px; padding:0.35rem 0.7rem;
+                       font-family:'Source Sans 3',sans-serif;
+                       font-size:0.9rem; color:var(--ink); cursor:pointer;">
+            <option value="date-desc">Latest first</option>
+            <option value="date-asc">Oldest first</option>
+            <option value="wpm-desc">Highest WPM</option>
+            <option value="score-desc">Highest Score</option>
+            <option value="chunk-desc">Largest Chunk</option>
+        </select>
+
+        <!-- clear -->
+        <button onclick="clearFilter()"
+                class="btn btn-outline-secondary btn-sm">
+            Clear
+        </button>
+
+        <span id="result-count"
+              style="font-size:0.85rem; color:var(--ink-light); margin-left:auto;">
+        </span>
+    </div>
+</div>
+
+<!-- TABLE -->
+<div class="card mb-5" style="overflow:hidden;">
+    <div style="overflow-x:auto;">
+        <table id="history-table"
+               style="width:100%; border-collapse:collapse;
+                      font-family:'Source Sans 3',sans-serif; font-size:0.92rem;">
+
+            <!-- HEAD -->
+            <thead>
+                <tr style="background:var(--ink); color:#f5f0e8;">
+                    <th style="padding:0.8rem 1rem; text-align:left;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Date
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:left;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Text
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:left;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Subject
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:center;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Level
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:center;
+                               font-weight:600; letter-spacing:0.5px;">
+                        WPM
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:center;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Score
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:center;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Chunk
+                    </th>
+                    <th style="padding:0.8rem 1rem; text-align:center;
+                               font-weight:600; letter-spacing:0.5px;">
+                        Time
+                    </th>
+                </tr>
+            </thead>
+
+            <!-- BODY -->
+            <tbody id="history-body">
+                {% for s in sessions %}
+                <tr class="history-row"
+                    data-title="{{ s.text.title|lower }}"
+                    data-subject="{{ s.text.subject.name|lower }}"
+                    data-date="{{ s.created_at|date:'U' }}"
+                    data-wpm="{{ s.wpm }}"
+                    data-score="{{ s.score }}"
+                    data-chunk="{{ s.chunk_size }}"
+                    style="border-bottom:1px solid var(--border);
+                           transition:background 0.15s;"
+                    onmouseover="this.style.background='var(--parchment-dark)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <!-- Date -->
+                    <td style="padding:0.75rem 1rem; color:var(--ink-light);
+                               white-space:nowrap;">
+                        {{ s.created_at|date:"d M Y" }}<br>
+                        <span style="font-size:0.78rem;">
+                            {{ s.created_at|date:"H:i" }}
+                        </span>
+                    </td>
+
+                    <!-- Title -->
+                    <td style="padding:0.75rem 1rem; color:var(--ink);
+                               font-style:italic; max-width:220px;">
+                        {{ s.text.title }}
+                    </td>
+
+                    <!-- Subject -->
+                    <td style="padding:0.75rem 1rem;">
+                        <span style="background:var(--parchment-dark);
+                                     border:1px solid var(--border);
+                                     border-radius:3px; padding:2px 8px;
+                                     font-size:0.82rem; color:var(--accent);">
+                            {{ s.text.subject.name }}
+                        </span>
+                    </td>
+
+                    <!-- Level -->
+                    <td style="padding:0.75rem 1rem; text-align:center;">
+                        <span style="font-family:'Playfair Display',serif;
+                                     color:var(--accent); font-weight:700;">
+                            {{ s.text.difficulty }}
+                        </span>
+                    </td>
+
+                    <!-- WPM -->
+                    <td style="padding:0.75rem 1rem; text-align:center;">
+                        <span style="font-family:'Playfair Display',serif;
+                                     font-weight:700;
+                                     color:{% if s.wpm >= 300 %}#4a8a3a
+                                           {% elif s.wpm >= 150 %}var(--accent)
+                                           {% else %}var(--ink-light){% endif %};">
+                            {{ s.wpm|floatformat:0 }}
+                        </span>
+                    </td>
+
+                    <!-- Score -->
+                    <td style="padding:0.75rem 1rem; text-align:center;">
+                        <span style="font-family:'Playfair Display',serif;
+                                     font-weight:700;
+                                     color:{% if s.score >= 80 %}#4a8a3a
+                                           {% elif s.score >= 60 %}var(--accent-light)
+                                           {% else %}#a04040{% endif %};">
+                            {{ s.score|floatformat:1 }}%
+                        </span>
+                    </td>
+
+                    <!-- Chunk -->
+                    <td style="padding:0.75rem 1rem; text-align:center;">
+                        <span style="display:inline-block;
+                                     background:var(--accent);
+                                     color:#fff; border-radius:3px;
+                                     padding:2px 10px;
+                                     font-family:'Playfair Display',serif;
+                                     font-weight:700; font-size:0.95rem;">
+                            {{ s.chunk_size }}
+                        </span>
+                    </td>
+
+                    <!-- Time -->
+                    <td style="padding:0.75rem 1rem; text-align:center;
+                               color:var(--ink-light); white-space:nowrap;">
+                        {% if s.time_spent >= 60 %}
+                            {{ s.time_spent|divisibleby:60 }}m
+                            {% widthratio s.time_spent|add:0 60 1 %}s
+                        {% else %}
+                            {{ s.time_spent }}s
+                        {% endif %}
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SESSION DATA FOR JS -->
+<script>
+const SESSION_DATA = [
+    {% for s in sessions %}
+    {
+        wpm:   {{ s.wpm }},
+        score: {{ s.score }},
+        chunk: {{ s.chunk_size }},
+    },
+    {% endfor %}
+];
+</script>
+
+{% else %}
+
+<!-- EMPTY STATE -->
+<div class="text-center mt-5 mb-5">
+    <p style="font-size:3rem;">📭</p>
+    <p style="color:var(--ink-light); font-style:italic; font-size:1.1rem;">
+        No sessions yet. Start reading to build your history!
+    </p>
+    <a href="{% url 'subject_select' %}" class="btn btn-primary btn-lg px-5 mt-2">
+        📖 Start Your First Session
+    </a>
+</div>
+
+{% endif %}
+
+<!-- BACK -->
+<div class="text-center mb-5">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<script>
+{% if sessions %}
+
+// ── compute summary stats ────────────────────────────
+const bestWpm   = Math.max(...SESSION_DATA.map(s => s.wpm));
+const bestScore = Math.max(...SESSION_DATA.map(s => s.score));
+const avgChunk  = (SESSION_DATA.reduce((a,s) => a + s.chunk, 0) / SESSION_DATA.length).toFixed(1);
+
+document.getElementById('best-wpm').textContent   = Math.round(bestWpm);
+document.getElementById('best-score').textContent = bestScore.toFixed(1) + '%';
+document.getElementById('avg-chunk').textContent  = avgChunk;
+
+// ── filter ───────────────────────────────────────────
+function filterTable() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const rows  = document.querySelectorAll('.history-row');
+    let visible = 0;
+
+    rows.forEach(row => {
+        const title   = row.dataset.title;
+        const subject = row.dataset.subject;
+        const match   = title.includes(query) || subject.includes(query);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    document.getElementById('result-count').textContent =
+        query ? `${visible} result${visible !== 1 ? 's' : ''} found` : '';
+}
+
+function clearFilter() {
+    document.getElementById('search-input').value = '';
+    document.querySelectorAll('.history-row').forEach(r => r.style.display = '');
+    document.getElementById('result-count').textContent = '';
+    document.getElementById('sort-select').value = 'date-desc';
+}
+
+// ── sort ─────────────────────────────────────────────
+function sortTable() {
+    const mode  = document.getElementById('sort-select').value;
+    const tbody = document.getElementById('history-body');
+    const rows  = Array.from(tbody.querySelectorAll('.history-row'));
+
+    rows.sort((a, b) => {
+        switch(mode) {
+            case 'date-desc':  return b.dataset.date  - a.dataset.date;
+            case 'date-asc':   return a.dataset.date  - b.dataset.date;
+            case 'wpm-desc':   return b.dataset.wpm   - a.dataset.wpm;
+            case 'score-desc': return b.dataset.score - a.dataset.score;
+            case 'chunk-desc': return b.dataset.chunk - a.dataset.chunk;
+        }
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+{% endif %}
+</script>
+
+{% endblock %}

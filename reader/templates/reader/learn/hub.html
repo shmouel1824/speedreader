@@ -1,0 +1,127 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1>📚 Speed Reading Academy</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Master the science and art of speed reading — one lesson at a time.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="card p-4 mb-4" style="background:#fdf8f0;">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h5 style="font-family:'Playfair Display',serif;
+                   color:var(--accent); margin:0;">
+            Your Learning Progress
+        </h5>
+        <span style="font-family:'Playfair Display',serif;
+                     color:var(--accent); font-weight:700; font-size:1.2rem;">
+            {{ completed_count }} / {{ total_lessons }} lessons
+        </span>
+    </div>
+    <div style="background:var(--parchment-dark); border-radius:4px;
+                height:12px; overflow:hidden; border:1px solid var(--border);">
+        <div style="height:100%; background:var(--accent);
+                    width:{% widthratio completed_count total_lessons 100 %}%;
+                    transition:width 1s ease;">
+        </div>
+    </div>
+    {% if completed_count == total_lessons %}
+    <p style="text-align:center; color:#4a8a3a; font-weight:600;
+              margin-top:0.8rem; margin-bottom:0; font-style:italic;">
+        🎓 Congratulations! You completed all lessons!
+    </p>
+    {% endif %}
+</div>
+
+<!-- LESSONS GRID -->
+<div class="row g-3 mb-5">
+    {% for item in lessons_data %}
+    <div class="col-md-6">
+        <div class="card p-4 h-100"
+             style="border:2px solid
+             {% if item.completed %}#7aab6a{% else %}var(--border){% endif %};
+             transition:all 0.2s;
+             {% if item.completed %}background:linear-gradient(135deg,#f5fbf0,#edf7e6);{% endif %}"
+             onmouseover="this.style.borderColor='var(--accent)'"
+             onmouseout="this.style.borderColor='{% if item.completed %}#7aab6a{% else %}var(--border){% endif %}'">
+
+            <div class="d-flex align-items-start gap-3">
+                <div style="font-size:2.5rem; line-height:1;">
+                    {{ item.lesson.icon }}
+                </div>
+                <div style="flex:1;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span style="font-size:0.78rem; color:var(--ink-light);
+                                     text-transform:uppercase; letter-spacing:1px;">
+                            Lesson {{ item.lesson.number }}
+                        </span>
+                        {% if item.completed %}
+                        <span style="font-size:0.78rem; color:#4a8a3a; font-weight:600;">
+                            ✅ {{ item.score }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    <h5 style="font-family:'Playfair Display',serif;
+                               color:var(--accent); margin:0.3rem 0 0.2rem;">
+                        {{ item.lesson.title }}
+                    </h5>
+                    <p style="color:var(--ink-light); font-size:0.88rem;
+                              font-style:italic; margin-bottom:1rem;">
+                        {{ item.lesson.subtitle }}
+                    </p>
+                    <a href="{% url 'lesson' item.lesson.number %}"
+                       class="btn btn-sm
+                       {% if item.completed %}btn-outline-secondary
+                       {% else %}btn-primary{% endif %}
+                       px-3">
+                        {% if item.completed %}Review Lesson
+                        {% else %}Start Lesson →{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ASSISTANT CARD -->
+<div class="card p-4 mb-5"
+     style="background:linear-gradient(135deg,#fdf8f0,#fef3e0);
+            border:2px solid var(--accent-gold);">
+    <div class="row align-items-center g-3">
+        <div class="col-md-8">
+            <h4 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.5rem;">
+                🤖 Speed Reading Assistant
+            </h4>
+            <p style="color:var(--ink-light); margin-bottom:0.5rem;">
+                Ask anything about speed reading theory, techniques, or the
+                science of reading. Your AI coach is available 24/7.
+            </p>
+            <p style="color:var(--ink-light); font-size:0.85rem;
+                      font-style:italic; margin:0;">
+                💾 {{ total_qa }} question{{ total_qa|pluralize }}
+                already in the knowledge base.
+            </p>
+        </div>
+        <div class="col-md-4 text-center">
+            <a href="{% url 'assistant' %}"
+               class="btn btn-primary btn-lg px-4">
+                Ask the Assistant →
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- BACK -->
+<div class="text-center mb-5">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+        ← Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

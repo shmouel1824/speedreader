@@ -1,0 +1,252 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1>Comprehension Quiz</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Answer as quickly and accurately as you can.
+        The faster you answer correctly, the higher your score.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- TIME LIMIT CHOOSER (shown before quiz starts) -->
+<div id="time-chooser" class="text-center">
+    <div class="card p-4 mx-auto" style="max-width:450px;">
+        <h4 style="font-family:'Playfair Display',serif; color:var(--accent);">
+            Choose your time per question
+        </h4>
+        <p style="color:var(--ink-light); font-size:0.9rem; font-style:italic;">
+            ⚠️ The more time you allow yourself, the lower your score multiplier.
+        </p>
+        <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+            <input type="range" id="time-slider"
+                   min="5" max="60" value="20" step="5"
+                   style="width:200px; accent-color:var(--accent);">
+            <span id="time-display"
+                  style="font-family:'Playfair Display',serif;
+                         color:var(--accent); font-weight:700; min-width:60px;">
+                20 sec
+            </span>
+        </div>
+        <div class="mb-3">
+            <span style="font-size:0.9rem; color:var(--ink-light);">Score multiplier: </span>
+            <span id="multiplier-display"
+                  style="font-family:'Playfair Display',serif;
+                         color:var(--accent); font-weight:700; font-size:1.2rem;">
+                1.00×
+            </span>
+        </div>
+        <button class="btn btn-primary btn-lg px-5" onclick="startQuiz()">
+            Start Quiz →
+        </button>
+    </div>
+</div>
+
+<!-- QUIZ AREA (hidden until started) -->
+ {% with rtl=lang_cfg.rtl font=lang_cfg.font %}
+<style>
+    .lang-content {
+        direction:  {{ rtl|yesno:"rtl,ltr" }};
+        text-align: {{ rtl|yesno:"right,left" }};
+        {% if font %}font-family:'{{ font }}', serif !important;{% endif %}
+    }
+</style>
+<div id="quiz-area" style="display:none;">
+
+    <!-- PROGRESS -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span id="question-counter"
+              style="font-family:'Playfair Display',serif; color:var(--ink-light);">
+            Question 1 of {{ quizzes|length }}
+        </span>
+        <div class="text-end">
+            <span style="font-size:0.85rem; color:var(--ink-light);">Time remaining</span><br>
+            <span id="countdown"
+                  style="font-family:'Playfair Display',serif;
+                         font-size:2rem; font-weight:700; color:var(--accent);">
+                20
+            </span>
+        </div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div style="background:var(--parchment-dark); border-radius:4px;
+                height:6px; margin-bottom:1.5rem; overflow:hidden;">
+        <div id="progress-bar"
+             style="height:100%; background:var(--accent);
+                    width:100%; transition:width 1s linear;">
+        </div>
+    </div>
+
+    <!-- QUESTION CARD -->
+    <div class="card p-4 mb-4" id="question-card">
+        <p id="question-text" class="lang-content"
+           style="font-family:'Playfair Display',serif;
+                  font-size:1.2rem; color:var(--ink); font-weight:600;">
+        </p>
+        <div id="choices-container" class="mt-3 d-grid gap-2">
+        </div>
+    </div>
+
+</div>
+
+<!-- HIDDEN FORM to submit answers -->
+<form method="POST" id="quiz-form" style="display:none;">
+    {% csrf_token %}
+    {% for quiz in quizzes %}
+        <input type="hidden" name="quiz_{{ quiz.id }}" id="answer_{{ quiz.id }}" value="">
+    {% endfor %}
+    <input type="hidden" name="quiz_time_seconds" id="quiz-time-input" value="0">
+    <input type="hidden" name="time_limit_per_question" id="time-limit-input" value="20">
+</form>
+
+<!-- QUIZ DATA for JS -->
+<script>
+const QUESTIONS = [
+    {% for quiz in quizzes %}
+    {
+        id:      {{ quiz.id }},
+        question: "{{ quiz.question|escapejs }}",
+        choices: [
+            {letter: "A", text: "{{ quiz.choice_a|escapejs }}"},
+            {letter: "B", text: "{{ quiz.choice_b|escapejs }}"},
+            {letter: "C", text: "{{ quiz.choice_c|escapejs }}"},
+            {letter: "D", text: "{{ quiz.choice_d|escapejs }}"},
+        ]
+    },
+    {% endfor %}
+];
+</script>
+
+<script>
+// ── state ───────────────────────────────────────────
+let timePerQuestion = 20;
+let multiplier      = 1.0;
+let currentQ        = 0;
+let countdownTimer  = null;
+let secondsLeft     = 20;
+let quizStartTime   = null;
+let answers         = {};   // { quiz_id: 'A'|'B'|'C'|'D'|'' }
+
+// ── multiplier calc ──────────────────────────────────
+// 5 sec  → 2.0×   (maximum reward)
+// 60 sec → 0.5×   (minimum reward)
+function calcMultiplier(seconds) {
+    const max = 2.0, min = 0.5;
+    const ratio = (seconds - 5) / (60 - 5);
+    return (max - ratio * (max - min)).toFixed(2);
+}
+
+// ── slider ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('time-slider').addEventListener('input', function() {
+        timePerQuestion = parseInt(this.value);
+        document.getElementById('time-display').textContent     = timePerQuestion + ' sec';
+        multiplier = calcMultiplier(timePerQuestion);
+        document.getElementById('multiplier-display').textContent = multiplier + '×';
+    });
+});
+
+// ── start quiz ───────────────────────────────────────
+function startQuiz() {
+    timePerQuestion = parseInt(document.getElementById('time-slider').value);
+    multiplier      = calcMultiplier(timePerQuestion);
+    document.getElementById('time-limit-input').value = timePerQuestion;
+
+    document.getElementById('time-chooser').style.display = 'none';
+    document.getElementById('quiz-area').style.display    = 'block';
+
+    quizStartTime = Date.now();
+    showQuestion(0);
+}
+
+// ── show question ────────────────────────────────────
+function showQuestion(index) {
+    if (index >= QUESTIONS.length) {
+        submitQuiz();
+        return;
+    }
+
+    currentQ    = index;
+    secondsLeft = timePerQuestion;
+    const q     = QUESTIONS[index];
+
+    document.getElementById('question-counter').textContent =
+        'Question ' + (index + 1) + ' of ' + QUESTIONS.length;
+    document.getElementById('question-text').textContent = q.question;
+    document.getElementById('countdown').textContent     = secondsLeft;
+    document.getElementById('progress-bar').style.width  = '100%';
+
+    // build choices
+    const container = document.getElementById('choices-container');
+    container.innerHTML = '';
+    q.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.type      = 'button';
+       btn.className = 'btn btn-outline-secondary text-start lang-content';
+        btn.style.cssText = `
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            color: var(--ink);
+            border-color: var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            transition: all 0.15s;
+        `;
+        btn.innerHTML = `<strong style="color:var(--accent);">${choice.letter}.</strong> ${choice.text}`;
+        btn.onclick   = () => selectAnswer(q.id, choice.letter, index);
+        container.appendChild(btn);
+    });
+
+    // start countdown
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+        secondsLeft--;
+        document.getElementById('countdown').textContent = secondsLeft;
+
+        // shrink progress bar
+        const pct = (secondsLeft / timePerQuestion) * 100;
+        document.getElementById('progress-bar').style.width = pct + '%';
+
+        // color warning
+        if (secondsLeft <= 5) {
+            document.getElementById('countdown').style.color = '#c04040';
+            document.getElementById('progress-bar').style.background = '#c04040';
+        } else {
+            document.getElementById('countdown').style.color = 'var(--accent)';
+            document.getElementById('progress-bar').style.background = 'var(--accent)';
+        }
+
+        if (secondsLeft <= 0) {
+            clearInterval(countdownTimer);
+            // no answer = empty string
+            answers[q.id] = answers[q.id] || '';
+            showQuestion(index + 1);
+        }
+    }, 1000);
+}
+
+// ── select answer ────────────────────────────────────
+function selectAnswer(quizId, letter, index) {
+    clearInterval(countdownTimer);
+    answers[quizId] = letter;
+    showQuestion(index + 1);
+}
+
+// ── submit ───────────────────────────────────────────
+function submitQuiz() {
+    const totalSeconds = Math.round((Date.now() - quizStartTime) / 1000);
+    document.getElementById('quiz-time-input').value = totalSeconds;
+
+    // fill hidden inputs
+    QUESTIONS.forEach(q => {
+        const input = document.getElementById('answer_' + q.id);
+        if (input) input.value = answers[q.id] || '';
+    });
+
+    document.getElementById('quiz-form').submit();
+}
+</script>
+ {% endwith %} 
+{% endblock %}

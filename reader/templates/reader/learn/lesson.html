@@ -1,0 +1,282 @@
+{% extends 'reader/base.html' %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="mb-4">
+    <a href="{% url 'learn_hub' %}"
+       style="color:var(--ink-light); font-size:0.9rem; text-decoration:none;">
+        ← Back to Academy
+    </a>
+    <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+        <span style="font-size:3rem;">{{ lesson.icon }}</span>
+        <div>
+            <span style="font-size:0.78rem; color:var(--ink-light);
+                         text-transform:uppercase; letter-spacing:1px;">
+                Lesson {{ lesson.number }} of 7
+            </span>
+            <h1 style="margin:0.2rem 0 0;">{{ lesson.title }}</h1>
+            <p style="color:var(--ink-light); font-style:italic; margin:0;">
+                {{ lesson.subtitle }}
+            </p>
+        </div>
+        {% if progress.completed %}
+        <div class="ms-auto">
+            <span style="background:#f0f5e8; border:1px solid #7aab6a;
+                         border-radius:4px; padding:4px 12px;
+                         color:#4a8a3a; font-weight:600; font-size:0.9rem;">
+                ✅ Completed — {{ progress.score }}%
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+<!-- SCORE RESULT -->
+{% if submitted %}
+<div class="card p-4 mb-4 text-center"
+     style="background:{% if score >= 60 %}#f0f5e8{% else %}#f5ebe8{% endif %};
+            border:2px solid {% if score >= 60 %}#7aab6a{% else %}#c08080{% endif %};">
+    <div style="font-size:2.5rem; margin-bottom:0.3rem;">
+        {% if score >= 60 %}🎉{% else %}📚{% endif %}
+    </div>
+    <h4 style="font-family:'Playfair Display',serif;
+               color:{% if score >= 60 %}#4a8a3a{% else %}#a04040{% endif %};">
+        {% if score >= 60 %}
+            Lesson Complete! You scored {{ score }}%
+        {% else %}
+            Score: {{ score }}% — Review and try again!
+        {% endif %}
+    </h4>
+    <p style="color:var(--ink-light); font-size:0.9rem; margin:0;">
+        {% if score >= 60 %}
+            Excellent work! You have mastered {{ lesson.title }}.
+        {% else %}
+            You need 60% to pass. Re-read the lesson and try the quiz again.
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+
+<!-- THEORY SECTION -->
+<div class="card p-4 mb-3">
+    <h4 style="font-family:'Playfair Display',serif; color:var(--accent);
+               margin-bottom:1rem;">
+        📖 Theory
+    </h4>
+    <div style="font-size:1rem; line-height:1.9;
+                color:var(--ink); font-family:'Lora',serif;">
+        {{ lesson.theory|linebreaks }}
+    </div>
+</div>
+
+<!-- SCIENCE SECTION -->
+<div class="card p-4 mb-3"
+     style="border-left:4px solid var(--accent-gold);">
+    <h4 style="font-family:'Playfair Display',serif; color:var(--accent);
+               margin-bottom:1rem;">
+        🔬 The Science
+    </h4>
+    <div style="font-size:1rem; line-height:1.9;
+                color:var(--ink); font-family:'Lora',serif;">
+        {{ lesson.science|linebreaks }}
+    </div>
+</div>
+
+<!-- HOW TO SECTION -->
+<div class="card p-4 mb-3"
+     style="border-left:4px solid #7aab6a;">
+    <h4 style="font-family:'Playfair Display',serif; color:#4a8a3a;
+               margin-bottom:1rem;">
+        🎯 How to Apply It
+    </h4>
+    <div style="font-size:1rem; line-height:1.9;
+                color:var(--ink); font-family:'Lora',serif;">
+        {{ lesson.how_to|linebreaks }}
+    </div>
+</div>
+
+<!-- EXERCISE SECTION -->
+<div class="card p-4 mb-4"
+     style="background:#fdf8f0; border:2px solid var(--accent);">
+    <h4 style="font-family:'Playfair Display',serif; color:var(--accent);
+               margin-bottom:1rem;">
+        ⚡ Practice Exercise
+    </h4>
+    <div style="font-size:1rem; line-height:1.9;
+                color:var(--ink); font-family:'Lora',serif;">
+        {{ lesson.exercise|linebreaks }}
+    </div>
+    <div class="text-center mt-3">
+        <a href="{% url 'subject_select' %}"
+           class="btn btn-primary px-4">
+            Practice in the Reading App →
+        </a>
+    </div>
+</div>
+
+<!-- QUIZ SECTION -->
+<div class="card p-4 mb-5">
+    <h4 style="font-family:'Playfair Display',serif; color:var(--accent);
+               margin-bottom:0.5rem;">
+        ✅ Lesson Quiz
+    </h4>
+    <p style="color:var(--ink-light); font-size:0.9rem; font-style:italic;
+              margin-bottom:1.5rem;">
+        Answer these 3 questions to complete the lesson. You need 60% to pass.
+        Your answers should reflect what you learned — a few keywords are enough.
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% if lesson.number == 1 %}
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                1. What is subvocalization?
+            </label>
+            <input type="text" name="q1" required
+                   placeholder="Describe it in your own words..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                2. What speed limit does subvocalization impose?
+            </label>
+            <input type="text" name="q2" required
+                   placeholder="Approximately how many WPM?"
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                3. Name one technique to reduce subvocalization.
+            </label>
+            <input type="text" name="q3" required
+                   placeholder="Any technique from the lesson..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+
+        {% elif lesson.number == 2 %}
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                1. What is a fixation in reading?
+            </label>
+            <input type="text" name="q1" required
+                   placeholder="Describe when your eyes stop..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                2. How many words per chunk should a beginner start with?
+            </label>
+            <input type="text" name="q2" required
+                   placeholder="The recommended starting number..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                3. Where should you fixate your gaze when chunking?
+            </label>
+            <input type="text" name="q3" required
+                   placeholder="Where on the chunk?"
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+
+        {% else %}
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                1. What is the main concept of this lesson?
+            </label>
+            <input type="text" name="q1" required
+                   placeholder="Summarize the key idea..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                2. What does the science say about this technique?
+            </label>
+            <input type="text" name="q2" required
+                   placeholder="Mention any research finding..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        <div class="mb-4">
+            <label style="font-family:'Playfair Display',serif; font-size:1rem;
+                          color:var(--ink); font-weight:600;">
+                3. Give one practical technique from this lesson.
+            </label>
+            <input type="text" name="q3" required
+                   placeholder="Any practical tip..."
+                   style="width:100%; margin-top:0.5rem; padding:0.6rem 0.8rem;
+                          border:1px solid var(--border); border-radius:3px;
+                          background:#fff; font-family:'Source Sans 3',sans-serif;
+                          color:var(--ink);">
+        </div>
+        {% endif %}
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary btn-lg px-5">
+                Submit Answers →
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- NAVIGATION -->
+<div class="d-flex justify-content-between mb-5 flex-wrap gap-2">
+    {% if lesson.number > 1 %}
+    <a href="{% url 'lesson' lesson.number|add:'-1' %}"
+       class="btn btn-outline-secondary px-4">
+        ← Previous Lesson
+    </a>
+    {% else %}
+    <a href="{% url 'learn_hub' %}" class="btn btn-outline-secondary px-4">
+        ← Academy
+    </a>
+    {% endif %}
+
+    {% if lesson.number < 7 %}
+    <a href="{% url 'lesson' lesson.number|add:'1' %}"
+       class="btn btn-primary px-4">
+        Next Lesson →
+    </a>
+    {% else %}
+    <a href="{% url 'learn_hub' %}" class="btn btn-primary px-4">
+        Back to Academy 🎓
+    </a>
+    {% endif %}
+</div>
+
+{% endblock %}

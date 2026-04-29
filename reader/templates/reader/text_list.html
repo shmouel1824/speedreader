@@ -1,0 +1,170 @@
+
+{% extends 'reader/base.html' %}
+{% load reader_tags %}
+{% block content %}
+
+<!-- TITLE -->
+<div class="text-center mb-4">
+    <h1>{{ subject.name }}</h1>
+    <p style="color:var(--ink-light); font-style:italic;">
+        Choose a text to read in
+        <strong style="color:var(--accent);">{{ language }}</strong>.
+    </p>
+    <div class="divider">✦ ✦ ✦</div>
+</div>
+
+{% if texts %}
+
+<!-- LEVEL FILTER -->
+<div class="d-flex align-items-center gap-2 mb-4 flex-wrap justify-content-center">
+    <span style="font-size:0.85rem; color:var(--ink-light);">Filter by level:</span>
+    <button onclick="filterLevel(0)" id="filter-all" class="btn btn-sm btn-primary">
+        All
+    </button>
+    {% for n in "12345" %}
+    <button onclick="filterLevel({{ n }})" id="filter-{{ n }}" class="btn btn-sm btn-outline-secondary">
+        Level {{ n }}
+    </button>
+    {% endfor %}
+</div>
+
+<!-- TEXT CARDS -->
+<div class="row g-3 mb-4" id="text-grid">
+    {% for text in texts %}
+    <div class="col-md-6 text-card" data-level="{{ text.difficulty }}">
+        <div class="card p-4 h-100" style="border:1px solid var(--border); transition:all 0.2s;"
+            onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+
+            <!-- TITLE -->
+            <h5 style="font-family:'Playfair Display',serif;
+                       color:var(--accent); margin-bottom:0.5rem;
+                       {% if lang_cfg.rtl %}direction:rtl; text-align:right;{% endif %}
+                       {% if lang_cfg.font %}font-family:'{{ lang_cfg.font }}',serif;{% endif %}">
+                {{ text.title }}
+            </h5>
+
+            <!-- BADGES -->
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+
+                <!-- difficulty badge -->
+                <span style="background:var(--parchment-dark);
+                             border:1px solid var(--border);
+                             border-radius:20px; padding:2px 10px;
+                             font-size:0.78rem; color:var(--accent);
+                             font-family:'Source Sans 3',sans-serif;">
+                    Level {{ text.difficulty }} ·
+                    {% if text.difficulty == 1 %}Beginner
+                    {% elif text.difficulty == 2 %}Elementary
+                    {% elif text.difficulty == 3 %}Intermediate
+                    {% elif text.difficulty == 4 %}Advanced
+                    {% else %}Expert{% endif %}
+                </span>
+
+                <!-- word count badge -->
+                <span style="background:var(--parchment-dark);
+                             border:1px solid var(--border);
+                             border-radius:20px; padding:2px 10px;
+                             font-size:0.78rem; color:var(--ink-light);
+                             font-family:'Source Sans 3',sans-serif;">
+                    📖 {{ text.word_count }} words
+                </span>
+
+                <!-- quiz count badge -->
+                <span style="background:var(--parchment-dark);
+                             border:1px solid var(--border);
+                             border-radius:20px; padding:2px 10px;
+                             font-size:0.78rem; color:var(--ink-light);
+                             font-family:'Source Sans 3',sans-serif;">
+                    ❓ {{ text.quizzes.count }} question{{ text.quizzes.count|pluralize }}
+                </span>
+
+            </div>
+
+            <!-- PREVIEW -->
+            <p style="color:var(--ink-light); font-style:italic;
+                      font-size:0.9rem; line-height:1.6; flex:1;
+                      {% if lang_cfg.rtl %}direction:rtl; text-align:right;{% endif %}
+                      {% if lang_cfg.font %}font-family:'{{ lang_cfg.font }}',serif;{% endif %}">
+                {{ text.content|truncatewords:25 }}
+            </p>
+
+            <!-- ESTIMATED TIME -->
+            <p style="font-size:0.82rem; color:var(--ink-light); margin-bottom:0.8rem;">
+                ⏱️ Estimated reading time at 200 WPM:
+                <strong style="color:var(--accent);">
+                    {% widthratio text.word_count 200 1 %} min
+                </strong>
+            </p>
+
+            {% if text.id in user_bests %}
+            <div class="d-flex gap-2">
+                <a href="{% url 'retry_text' text.id %}" class="btn btn-outline-secondary btn-sm flex-fill">
+                    🔁 Retry
+                    <span style="font-size:0.75rem; color:var(--accent);
+                     display:block; margin-top:1px;">
+                       Best: {{ user_bests|get_item:text.id }}
+                    </span>
+                </a>
+                <a href="{% url 'start_reading_text' text.id %}?language={{ language }}"
+                    class="btn btn-primary btn-sm flex-fill">
+                    📖 Read Again
+                </a>
+            </div>
+            {% else %}
+            <a href="{% url 'start_reading_text' text.id %}?language={{ language }}" class="btn btn-primary w-100">
+                📖 Read This Text
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<!-- NO TEXTS -->
+<div class="card p-4 text-center mb-4" style="background:#fdf8f0; border:1px dashed var(--border);">
+    <p style="font-size:1.5rem; margin-bottom:0.5rem;">📭</p>
+    <p style="color:var(--ink-light); font-style:italic;">
+        No texts available in <strong>{{ language }}</strong> for this subject yet.
+    </p>
+    <p style="color:var(--ink-light); font-size:0.9rem;">
+        Use the <strong>✨ Request Your Own Text</strong> generator to create the first one!
+    </p>
+    <a href="{% url 'subject_select' %}" class="btn btn-primary mt-2 px-4">
+        ← Back to Subjects
+    </a>
+</div>
+
+{% endif %}
+
+<!-- NAVIGATION -->
+<div class="text-center mb-5">
+    <a href="{% url 'subject_select' %}" class="btn btn-outline-secondary px-4">
+        ← Back to Subjects
+    </a>
+</div>
+
+<script>
+    function filterLevel(level) {
+        const cards = document.querySelectorAll('.text-card');
+
+        // update button styles
+        document.getElementById('filter-all').className =
+            level === 0 ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.getElementById('filter-' + i);
+            if (btn) btn.className =
+                level === i ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+        }
+
+        // show/hide cards
+        cards.forEach(card => {
+            card.style.display =
+                (level === 0 || parseInt(card.dataset.level) === level) ? '' : 'none';
+        });
+    }
+</script>
+
+{% endblock %}
