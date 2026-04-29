@@ -1147,3 +1147,67 @@ def service_worker_view(request):
     """
     return HttpResponse(sw_content,
                        content_type='application/javascript')
+
+from django.http import HttpResponse, JsonResponse
+
+def manifest_view(request):
+    manifest = {
+        "name": "SpeedReader",
+        "short_name": "SpeedReader",
+        "description": "Read faster. Understand deeper.",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#2c2416",
+        "theme_color": "#2c2416",
+        "orientation": "portrait-primary",
+        "scope": "/",
+        "icons": [
+            {
+                "src": request.build_absolute_uri(
+                    '/static/icons/icon-192.png'),
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": request.build_absolute_uri(
+                    '/static/icons/icon-512.png'),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return JsonResponse(manifest)
+
+
+def service_worker_view(request):
+    sw = """
+const CACHE = 'speedreader-v2';
+
+self.addEventListener('install', e => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+    e.waitUntil(
+        caches.keys().then(keys =>
+            Promise.all(keys.map(k => caches.delete(k)))
+        ).then(() => self.clients.claim())
+    );
+});
+
+self.addEventListener('fetch', e => {
+    if (e.request.method !== 'GET') return;
+    e.respondWith(
+        fetch(e.request)
+            .then(response => {
+                const clone = response.clone();
+                caches.open(CACHE).then(c => c.put(e.request, clone));
+                return response;
+            })
+            .catch(() => caches.match(e.request))
+    );
+});
+"""
+    return HttpResponse(sw, content_type='application/javascript')
