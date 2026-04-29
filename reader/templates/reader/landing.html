@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedReader — Read Faster. Understand Deeper.</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --parchment:      #f5f0e8;
+            --parchment-dark: #ede6d6;
+            --ink:            #2c2416;
+            --ink-light:      #5c4f3a;
+            --accent:         #8b4513;
+            --accent-light:   #c4722a;
+            --accent-gold:    #c9a84c;
+            --border:         #c8b99a;
+            --white:          #fefcf8;
+            --shadow:         rgba(44,36,22,0.12);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--parchment);
+            color: var(--ink);
+            font-family: 'Lora', Georgia, serif;
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        .top-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(44,36,22,0.97);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--accent-gold);
+            padding: 0.7rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav-brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .top-nav-brand span { color: #fff; font-weight: 400; }
+
+        .top-nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .top-nav-links a {
+            color: rgba(245,240,232,0.8);
+            text-decoration: none;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .top-nav-links a:hover { color: var(--accent-gold); }
+
+        .btn-nav {
+            background: var(--accent);
+            color: #fff !important;
+            padding: 0.4rem 1.2rem;
+            border-radius: 3px;
+            font-weight: 600 !important;
+            transition: background 0.2s !important;
+        }
+
+        .btn-nav:hover { background: var(--accent-light) !important; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            background: var(--ink);
+            background-image:
+                radial-gradient(ellipse at 20% 60%, rgba(139,69,19,0.35) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(139,69,19,0.2) 0%, transparent 40%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 8rem 1.5rem 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* animated background lines */
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 60px,
+                rgba(201,168,76,0.03) 60px,
+                rgba(201,168,76,0.03) 61px
+            );
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 80px;
+            background: var(--parchment);
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.5);
+            color: var(--accent-gold);
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 0.4rem 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            animation: fadeUp 0.6s ease forwards;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.8rem, 7vw, 5.5rem);
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.05;
+            margin-bottom: 1rem;
+            animation: fadeUp 0.8s 0.2s ease both;
+        }
+
+        .hero h1 em {
+            color: var(--accent-gold);
+            font-style: italic;
+        }
+
+        .hero-tagline {
+            font-family: 'Lora', serif;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: rgba(245,240,232,0.7);
+            font-style: italic;
+            max-width: 580px;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            animation: fadeUp 0.8s 0.4s ease both;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 4rem;
+            animation: fadeUp 0.8s 0.6s ease both;
+        }
+
+        .btn-hero-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.9rem 2.5rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 3px;
+            text-decoration: none;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-hero-primary:hover {
+            background: var(--accent-light);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139,69,19,0.4);
+        }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: rgba(245,240,232,0.85);
+            border: 1px solid rgba(245,240,232,0.3);
+            padding: 0.9rem 2rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            border-radius: 3px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-hero-secondary:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ── LIVE STATS ── */
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeUp 0.8s 0.8s ease both;
+        }
+
+        .hero-stat { text-align: center; }
+
+        .hero-stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            display: block;
+            line-height: 1;
+        }
+
+        .hero-stat-label {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.75rem;
+            color: rgba(245,240,232,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.3rem;
+            display: block;
+        }
+
+        /* ── SECTIONS ── */
+        .section {
+            padding: 5rem 1.5rem;
+        }
+
+        .section-alt {
+            background: var(--parchment-dark);
+        }
+
+        .section-dark {
+            background: var(--ink);
+            color: #f5f0e8;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            font-family: 'Lora', serif;
+            font-size: 1rem;
+            color: var(--ink-light);
+            text-align: center;
+            font-style: italic;
+            margin-bottom: 3rem;
+        }
+
+        .section-dark .section-subtitle { color: rgba(245,240,232,0.6); }
+
+        /* ── HOW IT WORKS ── */
+        .step-card {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        .step-number-big {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+            opacity: 0.2;
+            position: absolute;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .step-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+            display: block;
+            margin-top: 2rem;
+        }
+
+        .step-card h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-card p {
+            font-family: 'Source Sans 3', sans-serif;
+            color: var(--ink-light);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ── MODE CARDS ── */
+        .mode-card {
+            background: rgba(245,240,232,0.05);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 6px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.25s;
+            height: 100%;
+        }
+
+        .mode-card:hover {
+            background: rgba(201,168,76,0.08);
+            border-color: var(--accent-gold);
+            transform: translateY(-4px);
+        }
+
+        .mode-emoji {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 0.8rem;
+        }
+
+        .mode-name {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-desc {
+            font-family: 'Source Sans 3', sans-serif;
+            color: rgba(245,240,232,0.65);
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin-bottom: 0.8rem;
+        }
+
+        .mode-bonus-pill {
+            display: inline-block;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.4);
+            color: var(--accent-gold);
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        /* ── RSVP DEMO ── */
+        .rsvp-demo {
+            background: var(--ink);
+            border: 2px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            text-align: center;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+
+        #demo-word {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            color: #fff;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+            transition: opacity 0.05s;
+        }
+
+        .demo-progress {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            height: 4px;
+            margin: 1.5rem 0 1rem;
+            overflow: hidden;
+        }
+
+        .demo-progress-bar {
+            height: 100%;
+            background: var(--accent-gold);
+            width: 0%;
+            transition: width 0.2s linear;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .btn-demo {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 3px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-demo-outline {
+            background: transparent;
+            color: rgba(245,240,232,0.8);
+            border: 1px solid rgba(245,240,232,0.3);
+            padding: 0.6rem 1.2rem;
+            border-radius: 3px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-demo-outline:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ── FEATURE PILLS ── */
+        .feature-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.88rem;
+            color: var(--ink-light);
+            margin: 0.3rem;
+        }
+
+        /* ── BADGE PREVIEW ── */
+        .badge-preview-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.2rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .badge-preview-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+
+        .badge-emoji-big { font-size: 2.5rem; display: block; margin-bottom: 0.4rem; }
+
+        .badge-name-text {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .badge-cond {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.75rem;
+            color: var(--ink-light);
+            line-height: 1.3;
+        }
+
+        /* ── LANGUAGE FLAGS ── */
+        .lang-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.6rem 1.2rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.95rem;
+            color: var(--ink-light);
+            margin: 0.3rem;
+            transition: all 0.2s;
+        }
+
+        .lang-flag:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── FINAL CTA ── */
+        .final-cta {
+            background: var(--ink);
+            background-image:
+                radial-gradient(ellipse at 30% 50%, rgba(139,69,19,0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(201,168,76,0.15) 0%, transparent 50%);
+            padding: 6rem 1.5rem;
+            text-align: center;
+        }
+
+        .final-cta h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .final-cta h2 em { color: var(--accent-gold); font-style: italic; }
+
+        .final-cta p {
+            font-family: 'Lora', serif;
+            color: rgba(245,240,232,0.65);
+            font-size: 1.1rem;
+            font-style: italic;
+            margin-bottom: 2.5rem;
+        }
+
+        /* ── FOOTER ── */
+        .site-footer {
+            background: #1a1410;
+            color: rgba(245,240,232,0.4);
+            text-align: center;
+            padding: 2rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.82rem;
+            border-top: 1px solid rgba(201,168,76,0.2);
+        }
+
+        .site-footer a { color: var(--accent-gold); text-decoration: none; }
+
+        /* ── ORNAMENTAL DIVIDER ── */
+        .ornament {
+            text-align: center;
+            color: var(--accent-gold);
+            font-size: 1rem;
+            letter-spacing: 8px;
+            opacity: 0.5;
+            margin: 0.5rem 0;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.6; }
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4a8a3a;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .hero-stats { gap: 1.5rem; }
+            .top-nav { padding: 0.6rem 1rem; }
+            .section { padding: 3.5rem 1rem; }
+        }
+
+        @media (max-width: 480px) {
+            .hero-cta { flex-direction: column; align-items: center; }
+            .btn-hero-primary,
+            .btn-hero-secondary { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+    <a href="{% url 'landing' %}" class="top-nav-brand">
+        📖 <span>Speed</span>Reader
+    </a>
+    <div class="top-nav-links">
+        <a href="#how-it-works">How it works</a>
+        <a href="#modes">Modes</a>
+        <a href="#academy">Academy</a>
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'register' %}" class="btn-nav">Start Free →</a>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     HERO
+═══════════════════════════════════════ -->
+<section class="hero">
+    <div class="hero-badge">
+        <span class="live-dot"></span>
+        Live · Free · Powered by AI
+    </div>
+
+    <h1>
+        Read Faster.<br>
+        Understand <em>Deeper.</em>
+    </h1>
+
+    <p class="hero-tagline">
+        SpeedReader trains you to double your reading speed
+        while improving comprehension — with AI-generated texts,
+        4 reading modes, and real cognitive science.
+    </p>
+
+    <div class="hero-cta">
+        <a href="{% url 'register' %}" class="btn-hero-primary">
+            📖 Start Reading — It's Free
+        </a>
+        <a href="#demo" class="btn-hero-secondary">
+            ⚡ Try the Live Demo
+        </a>
+    </div>
+
+    <!-- LIVE STATS -->
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <span class="hero-stat-value" id="stat-users">{{ total_users }}</span>
+            <span class="hero-stat-label">Readers registered</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value" id="stat-sessions">{{ total_sessions }}</span>
+            <span class="hero-stat-label">Sessions completed</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value" id="stat-texts">{{ total_texts }}</span>
+            <span class="hero-stat-label">AI-generated texts</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value" id="stat-langs">{{ total_languages }}</span>
+            <span class="hero-stat-label">Languages</span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════ -->
+<section class="section" id="how-it-works">
+    <div class="container">
+        <h2 class="section-title" style="color:var(--ink);">How It Works</h2>
+        <p class="section-subtitle">Three simple steps to transform your reading</p>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-number-big">1</span>
+                    <span class="step-icon">🎯</span>
+                    <h3>Choose Your Topic</h3>
+                    <p>Pick from existing subjects or ask the AI to generate a text on any topic you want — in your language, at your difficulty level.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-number-big">2</span>
+                    <span class="step-icon">👁️</span>
+                    <h3>Train Your Reading</h3>
+                    <p>Choose your reading mode and speed. The app guides your eyes through the text using proven speed reading techniques.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card">
+                    <span class="step-number-big">3</span>
+                    <span class="step-icon">📊</span>
+                    <h3>Test & Improve</h3>
+                    <p>Answer AI-generated comprehension questions. Track your WPM and score over time. Level up as you improve.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURE PILLS -->
+        <div class="text-center mt-4">
+            <span class="feature-pill">✅ No credit card required</span>
+            <span class="feature-pill">🌐 6 languages supported</span>
+            <span class="feature-pill">📱 Works on any device</span>
+            <span class="feature-pill">🤖 Powered by Claude AI</span>
+            <span class="feature-pill">🎮 27+ badges to earn</span>
+            <span class="feature-pill">📅 Daily challenges</span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     READING MODES
+═══════════════════════════════════════ -->
+<section class="section section-dark" id="modes">
+    <div class="container">
+        <h2 class="section-title" style="color:#fff;">4 Reading Modes</h2>
+        <p class="section-subtitle">Each mode trains a different skill — and earns a different score bonus</p>
+
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="mode-card">
+                    <span class="mode-emoji">🟡</span>
+                    <span class="mode-name">Highlight</span>
+                    <p class="mode-desc">Moving cursor highlights words through the full text. Perfect for beginners.</p>
+                    <span class="mode-bonus-pill">1.0× bonus</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="mode-card">
+                    <span class="mode-emoji">📜</span>
+                    <span class="mode-name">Scroll</span>
+                    <p class="mode-desc">Text scrolls upward automatically. Fix your eyes on the red line.</p>
+                    <span class="mode-bonus-pill">1.3× bonus</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="mode-card">
+                    <span class="mode-emoji">🔦</span>
+                    <span class="mode-name">Spotlight</span>
+                    <p class="mode-desc">Only the current line is bright. All others are dimmed to eliminate distraction.</p>
+                    <span class="mode-bonus-pill">1.5× bonus</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="mode-card">
+                    <span class="mode-emoji">⚡</span>
+                    <span class="mode-name">RSVP</span>
+                    <p class="mode-desc">Words flash one at a time center-screen. No eye movement. Maximum focus.</p>
+                    <span class="mode-bonus-pill">2.0× bonus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     LIVE RSVP DEMO
+═══════════════════════════════════════ -->
+<section class="section" id="demo">
+    <div class="container">
+        <h2 class="section-title" style="color:var(--ink);">Try It Right Now</h2>
+        <p class="section-subtitle">Experience RSVP mode — no account needed</p>
+
+        <div class="rsvp-demo">
+            <div id="demo-word">Press Start ▶</div>
+            <div class="demo-progress">
+                <div class="demo-progress-bar" id="demo-bar"></div>
+            </div>
+            <p style="font-family:'Source Sans 3',sans-serif; font-size:0.8rem;
+                      color:rgba(245,240,232,0.45); margin-bottom:0.5rem;">
+                <span id="demo-counter">0 / 0</span> words
+            </p>
+            <div class="demo-controls">
+                <button class="btn-demo" onclick="startDemo()" id="demo-start-btn">
+                    ▶ Start Demo
+                </button>
+                <button class="btn-demo-outline" onclick="stopDemo()">
+                    ⏹ Stop
+                </button>
+                <select id="demo-speed"
+                        style="background:rgba(255,255,255,0.1);
+                               border:1px solid rgba(245,240,232,0.2);
+                               color:rgba(245,240,232,0.8);
+                               padding:0.5rem 0.8rem; border-radius:3px;
+                               font-family:'Source Sans 3',sans-serif;
+                               font-size:0.85rem; cursor:pointer;">
+                    <option value="150">150 WPM</option>
+                    <option value="200" selected>200 WPM</option>
+                    <option value="300">300 WPM</option>
+                    <option value="400">400 WPM</option>
+                    <option value="500">500 WPM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p style="font-family:'Lora',serif; color:var(--ink-light);
+                      font-style:italic; font-size:0.95rem; margin-bottom:1rem;">
+                Impressive, isn't it? Now imagine reading your favourite books at this speed.
+            </p>
+            <a href="{% url 'register' %}" class="btn-hero-primary"
+               style="display:inline-block; text-decoration:none;">
+                📖 Create Your Free Account →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     ACADEMY
+═══════════════════════════════════════ -->
+<section class="section section-alt" id="academy">
+    <div class="container">
+        <h2 class="section-title" style="color:var(--ink);">Speed Reading Academy</h2>
+        <p class="section-subtitle">7 science-backed lessons to master the theory behind your practice</p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div style="background:var(--white); border:1px solid var(--border);
+                            border-radius:4px; padding:1.2rem; height:100%;">
+                    <div style="font-size:1.8rem; margin-bottom:0.5rem;">🤫</div>
+                    <div style="font-family:'Playfair Display',serif; color:var(--accent);
+                                font-size:0.95rem; font-weight:700; margin-bottom:0.3rem;">
+                        Eliminate Subvocalization
+                    </div>
+                    <p style="font-family:'Source Sans 3',sans-serif; font-size:0.82rem;
+                               color:var(--ink-light); margin:0; line-height:1.5;">
+                        Break through the 200 WPM ceiling imposed by your inner voice.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background:var(--white); border:1px solid var(--border);
+                            border-radius:4px; padding:1.2rem; height:100%;">
+                    <div style="font-size:1.8rem; margin-bottom:0.5rem;">👁️</div>
+                    <div style="font-family:'Playfair Display',serif; color:var(--accent);
+                                font-size:0.95rem; font-weight:700; margin-bottom:0.3rem;">
+                        Word Chunking
+                    </div>
+                    <p style="font-family:'Source Sans 3',sans-serif; font-size:0.82rem;
+                               color:var(--ink-light); margin:0; line-height:1.5;">
+                        Train your eyes to grab 3-5 words in a single glance.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background:var(--white); border:1px solid var(--border);
+                            border-radius:4px; padding:1.2rem; height:100%;">
+                    <div style="font-size:1.8rem; margin-bottom:0.5rem;">🌐</div>
+                    <div style="font-family:'Playfair Display',serif; color:var(--accent);
+                                font-size:0.95rem; font-weight:700; margin-bottom:0.3rem;">
+                        Expand Visual Span
+                    </div>
+                    <p style="font-family:'Source Sans 3',sans-serif; font-size:0.82rem;
+                               color:var(--ink-light); margin:0; line-height:1.5;">
+                        Use peripheral vision to read more with each fixation.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <p style="font-family:'Source Sans 3',sans-serif; color:var(--ink-light);
+                      font-size:0.9rem; margin-bottom:1rem;">
+                + 4 more lessons: Eliminating Regression · Preview Strategy ·
+                Active Reading · Meta-Cognition & Flow
+            </p>
+            <a href="{% url 'register' %}"
+               style="display:inline-block; background:var(--accent); color:#fff;
+                      padding:0.8rem 2rem; border-radius:3px; text-decoration:none;
+                      font-family:'Source Sans 3',sans-serif; font-weight:600;
+                      font-size:0.95rem; transition:background 0.2s;"
+               onmouseover="this.style.background='var(--accent-light)'"
+               onmouseout="this.style.background='var(--accent)'">
+                🎓 Access the Full Academy →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     BADGES
+═══════════════════════════════════════ -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" style="color:var(--ink);">27+ Badges to Unlock</h2>
+        <p class="section-subtitle">Every milestone, every achievement — recognized and rewarded</p>
+
+        <div class="row g-3 justify-content-center mb-4">
+            {% for badge in badges_preview %}
+            <div class="col-6 col-md-2">
+                <div class="badge-preview-card">
+                    <span class="badge-emoji-big">{{ badge.icon }}</span>
+                    <span class="badge-name-text">{{ badge.name }}</span>
+                    <span class="badge-cond">{{ badge.description }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center">
+            <p style="font-family:'Lora',serif; color:var(--ink-light);
+                      font-style:italic; font-size:0.95rem;">
+                Create your account to start earning badges today!
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     LANGUAGES
+═══════════════════════════════════════ -->
+<section class="section section-alt">
+    <div class="container text-center">
+        <h2 class="section-title" style="color:var(--ink);">Read in 6 Languages</h2>
+        <p class="section-subtitle">
+            Full RTL support for Hebrew and Arabic — fonts, alignment, and quiz included
+        </p>
+        <div style="margin-top:1.5rem;">
+            <span class="lang-flag">🇬🇧 English</span>
+            <span class="lang-flag">🇫🇷 Français</span>
+            <span class="lang-flag">🇩🇪 Deutsch</span>
+            <span class="lang-flag">🇪🇸 Español</span>
+            <span class="lang-flag" style="border-color:var(--accent-gold); color:var(--accent);">
+                🇮🇱 עברית (RTL)
+            </span>
+            <span class="lang-flag" style="border-color:var(--accent-gold); color:var(--accent);">
+                🇸🇦 العربية (RTL)
+            </span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     FINAL CTA
+═══════════════════════════════════════ -->
+<section class="final-cta">
+    <div class="container">
+        <h2>Ready to read <em>faster</em>?</h2>
+        <p>
+            Join {{ total_users }} reader{{ total_users|pluralize }} already training on SpeedReader.
+            Free forever. No credit card required.
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'register' %}" class="btn-hero-primary"
+               style="text-decoration:none; display:inline-block;">
+                📖 Create Free Account
+            </a>
+            <a href="{% url 'login' %}" class="btn-hero-secondary"
+               style="text-decoration:none; display:inline-block;">
+                Already have an account? Login →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+    <p>
+        📖 <strong style="color:var(--accent-gold);">SpeedReader</strong>
+        — Powered by <a href="https://anthropic.com">Claude AI</a>
+        &nbsp;·&nbsp;
+        Built by <strong style="color:rgba(245,240,232,0.7);">Sirius Academy</strong>,
+        Jerusalem 🇮🇱
+    </p>
+    <p style="margin-top:0.4rem; opacity:0.5;">
+        © 2026 SpeedReader · All rights reserved
+    </p>
+</footer>
+
+<!-- RSVP DEMO JS -->
+<script>
+var DEMO_TEXT = "Reading is a skill like any other. With the right techniques and consistent practice, anyone can double their reading speed while actually understanding more. The secret is training your brain to stop sounding out every word and start seeing meaning directly. Welcome to SpeedReader — where science meets practice.";
+
+var demoWords    = DEMO_TEXT.split(' ');
+var demoIndex    = 0;
+var demoInterval = null;
+var demoRunning  = false;
+
+function startDemo() {
+    if (demoRunning) return;
+    demoRunning = true;
+    demoIndex   = 0;
+
+    var btn = document.getElementById('demo-start-btn');
+    btn.textContent = '▶ Running...';
+    btn.disabled    = true;
+
+    var wpm    = parseInt(document.getElementById('demo-speed').value);
+    var msWord = (60 / wpm) * 1000;
+
+    demoInterval = setInterval(function() {
+        if (demoIndex >= demoWords.length) {
+            stopDemo();
+            document.getElementById('demo-word').textContent = '✅ Finished!';
+            return;
+        }
+
+        var word = demoWords[demoIndex];
+        document.getElementById('demo-word').textContent   = word;
+        document.getElementById('demo-counter').textContent =
+            (demoIndex + 1) + ' / ' + demoWords.length;
+        document.getElementById('demo-bar').style.width    =
+            ((demoIndex + 1) / demoWords.length * 100) + '%';
+        demoIndex++;
+    }, msWord);
+}
+
+function stopDemo() {
+    clearInterval(demoInterval);
+    demoRunning = false;
+    var btn = document.getElementById('demo-start-btn');
+    btn.textContent = '▶ Start Demo';
+    btn.disabled    = false;
+}
+
+// smooth number count up animation for stats
+function animateCounter(id, target) {
+    var el       = document.getElementById(id);
+    var start    = 0;
+    var duration = 2000;
+    var step     = target / (duration / 16);
+    var current  = 0;
+    var timer = setInterval(function() {
+        current += step;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        el.textContent = Math.floor(current);
+    }, 16);
+}
+
+// trigger count-up when hero is visible
+var observed = false;
+var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && !observed) {
+        observed = true;
+        animateCounter('stat-users',    {{ total_users }});
+        animateCounter('stat-sessions', {{ total_sessions }});
+        animateCounter('stat-texts',    {{ total_texts }});
+        animateCounter('stat-langs',    {{ total_languages }});
+    }
+}, { threshold: 0.3 });
+
+observer.observe(document.getElementById('stat-users'));
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

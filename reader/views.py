@@ -26,6 +26,8 @@ from django.http import JsonResponse
 from django.http import JsonResponse
 import json as json_module
 
+from django.db.models import Sum, Count
+
 def get_lang_cfg(language):
     return LANGUAGE_CONFIG.get(language, {'rtl': False, 'font': None})
 
@@ -1061,3 +1063,29 @@ def save_preferences_view(request):
     profile.save()
 
     return JsonResponse({'status': 'saved'})
+
+def landing_view(request):
+    # redirect logged-in users directly to dashboard
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    # ── live stats from DB ────────────────────────────
+    from django.contrib.auth.models import User
+    total_users    = User.objects.count()
+    total_sessions = UserSession.objects.filter(completed=True).count()
+    total_texts    = Text.objects.count()
+    total_languages= Text.objects.values('language').distinct().count()
+
+     # pick 6 interesting badges for preview
+    badges_preview = Badge.objects.filter(code__in=[
+        'first_steps', 'speed_demon', 'perfectionist',
+        'challenger', 'polyglot', 'speed_scholar',
+    ])
+
+    return render(request, 'reader/landing.html', {
+        'total_users':     total_users,
+        'total_sessions':  total_sessions,
+        'total_texts':     total_texts,
+        'total_languages': total_languages,
+        'badges_preview':  badges_preview,
+    })
