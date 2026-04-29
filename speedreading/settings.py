@@ -228,7 +228,7 @@ CRISPY_TEMPLATE_PACK          = "bootstrap5"
 # ── MIDDLEWARE ────────────────────────────────────────
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← right after security
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← must be second!
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
