@@ -1,0 +1,51 @@
+{
+    "name": "SpeedReader",
+    "short_name": "SpeedReader",
+    "description": "Read faster. Understand deeper. Powered by AI.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#2c2416",
+    "theme_color": "#2c2416",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "en",
+    "icons": [
+        {
+            "src": "/static/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "categories": ["education", "productivity"],
+    "shortcuts": [
+        {
+            "name": "Start Reading",
+            "url": "/subjects/",
+            "description": "Jump straight to a reading session"
+        },
+        {
+            "name": "Daily Challenge",
+            "url": "/daily/",
+            "description": "Today's reading challenge"
+        },
+        {
+            "name": "Academy",
+            "url": "/learn/",
+            "description": "Speed reading lessons"
+        }
+    ]
+}

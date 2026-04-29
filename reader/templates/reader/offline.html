@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedReader — Offline</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #2c2416;
+            color: #f5f0e8;
+            font-family: 'Source Sans 3', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+            margin: 0;
+        }
+        .icon  { font-size: 5rem; margin-bottom: 1rem; }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: #c9a84c;
+            margin-bottom: 0.5rem;
+        }
+        p { color: rgba(245,240,232,0.65); margin-bottom: 1.5rem; line-height: 1.7; }
+        .btn {
+            background: #8b4513;
+            color: #fff;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 3px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #c4722a; }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="icon">📖</div>
+        <h1>You are offline</h1>
+        <p>
+            SpeedReader needs an internet connection to generate texts and quizzes.<br>
+            Please check your connection and try again.
+        </p>
+        <button class="btn" onclick="window.location.reload()">
+            🔄 Try Again
+        </button>
+    </div>
+</body>
+</html>

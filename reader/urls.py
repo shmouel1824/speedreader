@@ -24,4 +24,5 @@ urlpatterns = [
     path('learn/assistant/ask/',                    views.assistant_ask_view,         name='assistant_ask'),
     path('custom/',                                 views.custom_text_view,           name='custom_text'),
     path('preferences/',                            views.save_preferences_view,      name='save_preferences'),
+    path('offline/', views.offline_view, name='offline'),
 ]

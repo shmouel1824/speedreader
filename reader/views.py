@@ -1089,3 +1089,6 @@ def landing_view(request):
         'total_languages': total_languages,
         'badges_preview':  badges_preview,
     })
+
+def offline_view(request):
+    return render(request, 'reader/offline.html')
