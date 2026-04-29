@@ -168,6 +168,7 @@ class DailyChallengeEntry(models.Model):
 
     class Meta:
         unique_together = ('challenge', 'user')
+        verbose_name_plural = "Daily Challenge Entries"
 
     def __str__(self):
         return f"{self.user.username} — {self.challenge.date} — Score:{self.score}"
@@ -206,6 +207,7 @@ class LessonProgress(models.Model):
 
     class Meta:
         unique_together = ('user', 'lesson')
+        verbose_name_plural = "Lesson Progress"
 
     def __str__(self):
         return f"{self.user.username} — Lesson {self.lesson.number} — {'✓' if self.completed else '…'}"
