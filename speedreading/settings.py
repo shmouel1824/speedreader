@@ -329,6 +329,24 @@ JAZZMIN_SETTINGS = {
         "reader.userprofile": "fas fa-chart-line",
         "reader.usersession": "fas fa-stopwatch",
     },
+    # ── TOP MENU ──────────────────────────────────
+    "topmenu_links": [
+        {
+            "name": "🏠 Back to SpeedReader",
+            "url":  "/dashboard/",
+            "new_window": False,
+        },
+        {
+            "name": "📚 Subjects",
+            "url":  "/subjects/",
+            "new_window": False,
+        },
+        {
+            "name": "📅 Daily Challenge",
+            "url":  "/daily/",
+            "new_window": False,
+        },
+    ],
 }
 
 JAZZMIN_UI_TWEAKS = {
