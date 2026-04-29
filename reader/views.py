@@ -1092,3 +1092,31 @@ def landing_view(request):
 
 def offline_view(request):
     return render(request, 'reader/offline.html')
+
+def manifest_view(request):
+    manifest = {
+        "name": "SpeedReader",
+        "short_name": "SpeedReader",
+        "description": "Read faster. Understand deeper. Powered by AI.",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#2c2416",
+        "theme_color": "#2c2416",
+        "orientation": "portrait-primary",
+        "scope": "/",
+        "icons": [
+            {
+                "src": request.build_absolute_uri('/static/icons/icon-192.png'),
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": request.build_absolute_uri('/static/icons/icon-512.png'),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return JsonResponse(manifest)
