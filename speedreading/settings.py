@@ -299,7 +299,7 @@ USE_TZ        = True
 # ── STATIC FILES ──────────────────────────────────────
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # ── MEDIA ─────────────────────────────────────────────
 MEDIA_URL  = '/media/'
@@ -337,3 +337,7 @@ JAZZMIN_UI_TWEAKS = {
     "navbar":             "navbar-dark",
     "sidebar":            "sidebar-dark-primary",
 }
+
+WHITENOISE_USE_FINDERS       = True
+WHITENOISE_AUTOREFRESH       = True
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = []
