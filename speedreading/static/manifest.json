@@ -17,7 +17,7 @@
             "purpose": "any maskable"
         },
         {
-            "src": "/static/icons/icon-512.png",
+            "src": "/static/icons/icon-192 (1).png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
@@ -25,7 +25,7 @@
     ],
     "screenshots": [
         {
-            "src": "/static/icons/icon-512.png",
+            "src": "/static/icons/icon-512 (1).png",
             "sizes": "512x512",
             "type": "image/png"
         }
