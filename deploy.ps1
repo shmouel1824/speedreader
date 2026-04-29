@@ -1,22 +1,18 @@
+param([string]$msg = "update")
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-param([string]$msg = "update")
-
 Write-Host ""
-Write-Host "🚀 Deploying SpeedReader..." -ForegroundColor Cyan
+Write-Host "Deploying SpeedReader..." -ForegroundColor Cyan
 
-# Add all changes
 git add .
-Write-Host "✅ Files staged" -ForegroundColor Green
+Write-Host "OK - Files staged" -ForegroundColor Green
 
-# Commit
 git commit -m $msg
-Write-Host "✅ Committed: $msg" -ForegroundColor Green
+Write-Host "OK - Committed: $msg" -ForegroundColor Green
 
-# Push
 git push origin main
 Write-Host ""
-Write-Host "🎉 Deployed successfully!" -ForegroundColor Green
-Write-Host "🌍 https://web-production-d27f4.up.railway.app" -ForegroundColor Cyan
+Write-Host "SUCCESS - Deployed!" -ForegroundColor Green
+Write-Host "URL: https://web-production-d27f4.up.railway.app" -ForegroundColor Cyan
 Write-Host ""
