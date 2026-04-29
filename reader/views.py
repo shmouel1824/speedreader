@@ -27,6 +27,8 @@ from django.http import JsonResponse
 import json as json_module
 
 from django.db.models import Sum, Count
+from django.http import HttpResponse
+
 
 def get_lang_cfg(language):
     return LANGUAGE_CONFIG.get(language, {'rtl': False, 'font': None})
@@ -1120,3 +1122,28 @@ def manifest_view(request):
         ]
     }
     return JsonResponse(manifest)
+
+
+def service_worker_view(request):
+    sw_content = """
+    const CACHE_NAME = 'speedreader-v1';
+
+    self.addEventListener('install', function(e) {
+        self.skipWaiting();
+    });
+
+    self.addEventListener('activate', function(e) {
+        e.waitUntil(self.clients.claim());
+    });
+
+    self.addEventListener('fetch', function(e) {
+        if (e.request.method !== 'GET') return;
+        e.respondWith(
+            fetch(e.request).catch(function() {
+                return caches.match(e.request);
+            })
+        );
+    });
+    """
+    return HttpResponse(sw_content,
+                       content_type='application/javascript')
