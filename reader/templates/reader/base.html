@@ -783,15 +783,11 @@
             }
         }
 
-        function dismissInstall() {
-            if (installBanner) installBanner.style.display = 'none';
-            localStorage.setItem('pwa-dismissed', '1');
-        }
-
-        // don't show if already dismissed
-        if (localStorage.getItem('pwa-dismissed')) {
-            if (installBanner) installBanner.style.display = 'none';
-        }
+       
+function dismissInstall() {
+    if (installBanner) installBanner.style.display = 'none';
+}
+      
     </script>
 </body>
 
